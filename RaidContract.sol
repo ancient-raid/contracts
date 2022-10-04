@@ -1,64 +1,10 @@
 /**
  *Submitted for verification at BscScan.com on 2021-11-07
- */
-
-// File: contracts\V1\CryptoGodzStructs.sol
+ */ 
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
-
-library CryptoGodzStructs {
-    bytes32 constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-
-    enum Element {
-        EARTH,
-        WATER,
-        FIRE,
-        WIND
-    }
-
-    enum Class {
-        BASIC,
-        CRYSTAL,
-        SHADOW,
-        HOLY
-    }
-
-    struct TimelockData {
-        uint256 tokenAmount; // amount of tokens under timelocked
-        address benificiary; // recipient timelocked address
-        uint256 lastReleased; // date in seconds when the timelock was last released
-        uint256 releaseTimeFrequency; // value of time to complete before releasing the timelock since lastReleased
-        uint256 releaseAmount; // release percentage of the tokenAmount
-    }
-
-    struct CryptoSentz {
-        Element element;
-        Class class;
-        uint256 level;
-        uint256 spirit;
-        bool transmuted;
-    }
-
-    struct ItemSale {
-        uint256 tokenId;
-        address owner;
-        uint256 price;
-    }
-
-    struct FightHistory {
-        address player;
-        uint256 tokenId;
-        uint256 rewards;
-        uint256 date;
-        uint256 winrate;
-        bool hasWon;
-        bool isMinted;
-        Element enemyElement;
-        Class enemyClass;
-    }
-}
+ 
 
 // File: @openzeppelin\contracts-upgradeable\utils\math\SafeMathUpgradeable.sol
 
@@ -2889,51 +2835,7 @@ contract ERC20Upgradeable is
 
     uint256[45] private __gap;
 }
-
-// File: contracts\V2\CryptoGodz\ICryptoGodzV2.sol
-
-pragma solidity 0.8.9;
-
-interface ICryptoGodzV2 is IERC20MetadataUpgradeable {
-    /**
-     * @dev Set minter role for {Rewards Manager}, {Timelock Manager}.
-     */
-    function setPauser(address pauser_) external;
-
-    /**
-     * @dev Pauses all token transfers.
-     */
-    function pause() external;
-
-    /**
-     * @dev Unpauses all token transfers.
-     */
-    function unpause() external;
-
-    /**
-     * @dev Returns the cap on the token's total supply.
-     */
-    function cap() external view returns (uint256);
-
-    /**
-     * @dev Mint game rewards without exceeding token supply cap
-     */
-    function mint(uint256 rewards_) external;
-
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     */
-    function burn(uint256 amount) external;
-
-    function migrateData(address[] memory destinations, uint256[] memory values)
-        external;
-
-    /**
-     * @dev create pair
-     */
-    function createPair() external returns (address);
-}
-
+ 
 // File: @pancakeswap2\pancake-swap-core\contracts\interfaces\IPancakeFactory.sol
 
 pragma solidity >=0.5.0;
@@ -3469,8 +3371,7 @@ contract RaidContract is
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable,
     PausableUpgradeable,
-    ERC20Upgradeable,
-    ICryptoGodzV2
+    ERC20Upgradeable 
 {
     using SafeMathUpgradeable for uint256;
 
@@ -3528,10 +3429,10 @@ contract RaidContract is
         uint8 decimals_ = 18;
         uint256 initialSupply_ = 300000000 ether;
         uint256 cap_ = 300000000 ether;
-        __CryptoGodz_init(name_, symbol_, decimals_, initialSupply_, cap_);
+        __CryptoRaid_init(name_, symbol_, decimals_, initialSupply_, cap_);
     }
 
-    function __CryptoGodz_init(
+    function __CryptoRaid_init(
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
@@ -3547,10 +3448,10 @@ contract RaidContract is
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ERC20_init_unchained(name_, symbol_);
-        __CryptoGodz_init_unchained(decimals_, initialSupply_, cap_);
+        __CryptoRaid_init_unchained(decimals_, initialSupply_, cap_);
     }
 
-    function __CryptoGodz_init_unchained(
+    function __CryptoRaid_init_unchained(
         uint8 decimals_,
         uint256 initialSupply_,
         uint256 cap_
@@ -3561,31 +3462,17 @@ contract RaidContract is
         _decimals = decimals_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner());
-        setPauser(owner());
+ 
 
         _mint(owner(), initialSupply_);
     }
 
-    /**
-     * @dev migrate tokens
-     */
-    function migrateData(address[] memory destinations, uint256[] memory values)
-        external
-        override
-        onlyOwner
-    {
-        require(destinations.length == values.length, "invalid input length");
-
-        for (uint256 i = 0; i < destinations.length; i++) {
-            require(destinations[i] != address(0), "recipient is required");
-            transfer(destinations[i], values[i]);
-        }
-    }
+    
 
     /**
      * @dev create pair
      */
-    function createPair() external override onlyOwner returns (address) {
+    function createPair() external   onlyOwner returns (address) {
         pancakeRouterV2 = IPancakeRouter02(
             0x10ED43C718714eb63d5aA57B78B54704E256024E
         );
@@ -3602,74 +3489,23 @@ contract RaidContract is
     /**
      * @dev Returns the cap on the token's total supply.
      */
-    function cap() public view override returns (uint256) {
+    function cap() public view   returns (uint256) {
         return _cap;
     }
 
      /**
      * @dev Mint game rewards without exceeding token supply cap
      */
-    function mint(uint256 rewards_) external override onlyOwner { }
+    function mint(uint256 rewards_) external   onlyOwner { }
 
     /**
      * @dev Destroys `amount` tokens from the caller.
      */
-    function burn(uint256 amount) external override {
+    function burn(uint256 amount) external   {
         _burn(_msgSender(), amount);
     }
 
-    /**
-     * @dev Set minter role for {Rewards Manager}, {Timelock Manager}.
-     */
-    function setPauser(address pauser_) public override onlyOwner {
-        _setupRole(CryptoGodzStructs.PAUSER_ROLE, pauser_);
-    }
-
-    /**
-     * @dev Pauses all token transfers.
-     */
-    function pause() public override onlyRole(CryptoGodzStructs.PAUSER_ROLE) {
-        _pause();
-    }
-
-    /**
-     * @dev Unpauses all token transfers.
-     */
-    function unpause() public override onlyRole(CryptoGodzStructs.PAUSER_ROLE) {
-        _unpause();
-    }
-
-    /**
-     * @dev See {BEP20-transfer}.
-     */
-    function transfer(address recipient, uint256 amount)
-        public
-        virtual
-        override(ERC20Upgradeable, IERC20Upgradeable)
-        returns (bool)
-    {
-        return super.transfer(recipient, amount);
-    }
-
-    /**
-     * @dev See {BEP20-transferFrom}.
-     */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    )
-        public
-        virtual
-        override(ERC20Upgradeable, IERC20Upgradeable)
-        returns (bool)
-    {
-        require(
-            allowance(sender, _msgSender()) >= amount,
-            "BEP20: transfer amount exceeds allowance"
-        );
-        return super.transferFrom(sender, recipient, amount);
-    }
+    
 
     /**
      * @dev Atomically increases the allowance granted to `spender` by the caller.
