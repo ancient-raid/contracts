@@ -1,7 +1,8 @@
 import "@nomicfoundation/hardhat-toolbox";
 import { config as dotenvConfig } from "dotenv";
+import "hardhat-abi-exporter";
 import type { HardhatUserConfig } from "hardhat/config";
-import type { NetworkUserConfig } from "hardhat/types";
+import type { HttpNetworkAccountsUserConfig, NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 
 import "./tasks/accounts";
@@ -12,8 +13,9 @@ dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
 
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;
-if (!mnemonic) {
-  throw new Error("Please set your MNEMONIC in a .env file");
+const privateKey = process.env.PRIVATE_KEY as string;
+if (!mnemonic && !privateKey) {
+  throw new Error("Please set your MNEMONIC or PRIVATE_KEY in a .env file");
 }
 
 const infuraApiKey: string | undefined = process.env.INFURA_API_KEY;
@@ -25,6 +27,7 @@ const chainIds = {
   "arbitrum-mainnet": 42161,
   avalanche: 43114,
   bsc: 56,
+  "bsc-testnet": 97,
   goerli: 5,
   hardhat: 31337,
   mainnet: 1,
@@ -40,17 +43,33 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
       jsonRpcUrl = "https://api.avax.network/ext/bc/C/rpc";
       break;
     case "bsc":
-      jsonRpcUrl = "https://bsc-dataseed1.binance.org";
+      jsonRpcUrl = "https://bsc-dataseed4.binance.org";
+      break;
+    case "bsc-testnet":
+      jsonRpcUrl = "https://data-seed-prebsc-2-s1.binance.org:8545";
       break;
     default:
       jsonRpcUrl = "https://" + chain + ".infura.io/v3/" + infuraApiKey;
   }
-  return {
-    accounts: {
+
+  let accounts: HttpNetworkAccountsUserConfig | string[];
+  if (chain === "hardhat") {
+    accounts = {
       count: 10,
       mnemonic,
       path: "m/44'/60'/0'/0",
-    },
+    } as HttpNetworkAccountsUserConfig;
+  } else {
+    accounts = privateKey
+      ? [privateKey]
+      : ({
+          count: 10,
+          mnemonic,
+          path: "m/44'/60'/0'/0",
+        } as HttpNetworkAccountsUserConfig);
+  }
+  return {
+    accounts,
     chainId: chainIds[chain],
     url: jsonRpcUrl,
   };
@@ -86,6 +105,7 @@ const config: HardhatUserConfig = {
     arbitrum: getChainConfig("arbitrum-mainnet"),
     avalanche: getChainConfig("avalanche"),
     bsc: getChainConfig("bsc"),
+    "bsc-testnet": getChainConfig("bsc-testnet"),
     goerli: getChainConfig("goerli"),
     mainnet: getChainConfig("mainnet"),
     optimism: getChainConfig("optimism-mainnet"),
@@ -98,8 +118,17 @@ const config: HardhatUserConfig = {
     sources: "./contracts",
     tests: "./test",
   },
+  abiExporter: {
+    path: "./abi",
+    runOnCompile: true,
+    clear: true,
+    flat: true,
+    only: [":Hero", ":HeroMint", ":StakingPhase1", ":Marketplace"],
+    spacing: 2,
+    format: "json",
+  },
   solidity: {
-    version: "0.8.15",
+    version: "0.8.9",
     settings: {
       metadata: {
         // Not including the metadata hash
