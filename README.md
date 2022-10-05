@@ -1,12 +1,4 @@
-# Hardhat Template
-
-Raid contracts
-
-### Old
-
-- "Hero": "0xDE38d90c0b3996D13d0a768c709a6D6a172d25D5",
-- "HeroProxy": "0xd09e486223CDf18d4a2C1A072900C8Dc453b672A",
-- "HeroMint": "0x00D26F3938e5C2d375dAABD4A9eD17a75Bb3F313"
+# Raid contracts
 
 ## Usage
 
