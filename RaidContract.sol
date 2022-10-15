@@ -705,21 +705,7 @@ abstract contract ERC1967UpgradeUpgradeable is Initializable {
         emit Upgraded(newImplementation);
     }
 
-    /**
-     * @dev Perform implementation upgrade with additional setup call.
-     *
-     * Emits an {Upgraded} event.
-     */
-    function _upgradeToAndCall(
-        address newImplementation,
-        bytes memory data,
-        bool forceCall
-    ) internal {
-        _upgradeTo(newImplementation);
-        if (data.length > 0 || forceCall) {
-            _functionDelegateCall(newImplementation, data);
-        }
-    }
+
 
     /**
      * @dev Perform implementation upgrade with security checks for UUPS proxies, and additional setup call.
@@ -815,12 +801,7 @@ abstract contract ERC1967UpgradeUpgradeable is Initializable {
      */
     event BeaconUpgraded(address indexed beacon);
 
-    /**
-     * @dev Returns the current beacon.
-     */
-    function _getBeacon() internal view returns (address) {
-        return StorageSlotUpgradeable.getAddressSlot(_BEACON_SLOT).value;
-    }
+
 
     /**
      * @dev Stores a new beacon in the EIP1967 beacon slot.
@@ -839,26 +820,7 @@ abstract contract ERC1967UpgradeUpgradeable is Initializable {
         StorageSlotUpgradeable.getAddressSlot(_BEACON_SLOT).value = newBeacon;
     }
 
-    /**
-     * @dev Perform beacon upgrade with additional setup call. Note: This upgrades the address of the beacon, it does
-     * not upgrade the implementation contained in the beacon (see {UpgradeableBeacon-_setImplementation} for that).
-     *
-     * Emits a {BeaconUpgraded} event.
-     */
-    function _upgradeBeaconToAndCall(
-        address newBeacon,
-        bytes memory data,
-        bool forceCall
-    ) internal {
-        _setBeacon(newBeacon);
-        emit BeaconUpgraded(newBeacon);
-        if (data.length > 0 || forceCall) {
-            _functionDelegateCall(
-                IBeaconUpgradeable(newBeacon).implementation(),
-                data
-            );
-        }
-    }
+     
 
     /**
      * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
@@ -905,10 +867,7 @@ pragma solidity ^0.8.0;
  * _Available since v4.1._
  */
 abstract contract UUPSUpgradeable is Initializable, ERC1967UpgradeUpgradeable {
-    function __UUPSUpgradeable_init() internal initializer {
-        __ERC1967Upgrade_init_unchained();
-        __UUPSUpgradeable_init_unchained();
-    }
+
 
     function __UUPSUpgradeable_init_unchained() internal initializer {}
 
@@ -994,9 +953,7 @@ pragma solidity ^0.8.0;
  * This contract is only required for intermediate, library-like contracts.
  */
 abstract contract ContextUpgradeable is Initializable {
-    function __Context_init() internal initializer {
-        __Context_init_unchained();
-    }
+
 
     function __Context_init_unchained() internal initializer {}
 
@@ -1035,13 +992,6 @@ abstract contract OwnableUpgradeable is Initializable, ContextUpgradeable {
         address indexed newOwner
     );
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    function __Ownable_init() internal initializer {
-        __Context_init_unchained();
-        __Ownable_init_unchained();
-    }
 
     function __Ownable_init_unchained() internal initializer {
         _setOwner(_msgSender());
@@ -1069,7 +1019,7 @@ abstract contract OwnableUpgradeable is Initializable, ContextUpgradeable {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby removing any functionality that is only available to the owner.
      */
-    function renounceOwnership() public virtual onlyOwner {
+    function renounceOwnership() external  virtual onlyOwner {
         _setOwner(address(0));
     }
 
@@ -1077,7 +1027,7 @@ abstract contract OwnableUpgradeable is Initializable, ContextUpgradeable {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function transferOwnership(address newOwner) external virtual onlyOwner {
         require(
             newOwner != address(0),
             "Ownable: new owner is the zero address"
@@ -1344,9 +1294,7 @@ pragma solidity ^0.8.0;
  * Alternatively, {ERC165Storage} provides an easier to use but more expensive implementation.
  */
 abstract contract ERC165Upgradeable is Initializable, IERC165Upgradeable {
-    function __ERC165_init() internal initializer {
-        __ERC165_init_unchained();
-    }
+
 
     function __ERC165_init_unchained() internal initializer {}
 
@@ -1414,11 +1362,7 @@ abstract contract AccessControlUpgradeable is
     IAccessControlUpgradeable,
     ERC165Upgradeable
 {
-    function __AccessControl_init() internal initializer {
-        __Context_init_unchained();
-        __ERC165_init_unchained();
-        __AccessControl_init_unchained();
-    }
+
 
     function __AccessControl_init_unchained() internal initializer {}
 
@@ -2045,12 +1989,7 @@ abstract contract AccessControlEnumerableUpgradeable is
     IAccessControlEnumerableUpgradeable,
     AccessControlUpgradeable
 {
-    function __AccessControlEnumerable_init() internal initializer {
-        __Context_init_unchained();
-        __ERC165_init_unchained();
-        __AccessControl_init_unchained();
-        __AccessControlEnumerable_init_unchained();
-    }
+
 
     function __AccessControlEnumerable_init_unchained() internal initializer {}
 
@@ -2088,7 +2027,7 @@ abstract contract AccessControlEnumerableUpgradeable is
      * for more information.
      */
     function getRoleMember(bytes32 role, uint256 index)
-        public
+        external
         view
         override
         returns (address)
@@ -2101,7 +2040,7 @@ abstract contract AccessControlEnumerableUpgradeable is
      * together with {getRoleMember} to enumerate all bearers of a role.
      */
     function getRoleMemberCount(bytes32 role)
-        public
+        external
         view
         override
         returns (uint256)
@@ -2186,13 +2125,7 @@ abstract contract PausableUpgradeable is Initializable, ContextUpgradeable {
 
     bool private _paused;
 
-    /**
-     * @dev Initializes the contract in unpaused state.
-     */
-    function __Pausable_init() internal initializer {
-        __Context_init_unchained();
-        __Pausable_init_unchained();
-    }
+
 
     function __Pausable_init_unchained() internal initializer {
         _paused = false;
@@ -2229,29 +2162,9 @@ abstract contract PausableUpgradeable is Initializable, ContextUpgradeable {
         _;
     }
 
-    /**
-     * @dev Triggers stopped state.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    function _pause() internal virtual whenNotPaused {
-        _paused = true;
-        emit Paused(_msgSender());
-    }
+   
 
-    /**
-     * @dev Returns to normal state.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    function _unpause() internal virtual whenPaused {
-        _paused = false;
-        emit Unpaused(_msgSender());
-    }
+  
 
     uint256[49] private __gap;
 }
@@ -2441,27 +2354,14 @@ contract ERC20Upgradeable is
         address _zhiWallte,
         address _rewardWallte
     ) internal virtual {
+        require(_mainWallte!=address(0),"_mainWallte Cannot be empty!");
+        require(_zhiWallte!=address(0),"_zhiWallte Cannot be empty!");
+        require(_rewardWallte!=address(0),"_rewardWallte Cannot be empty!");
         mainWallte = _mainWallte;
         zhiWallte = _zhiWallte;
         rewardWallte = _rewardWallte;
     }
 
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The default value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    function __ERC20_init(string memory name_, string memory symbol_)
-        internal
-        initializer
-    {
-        __Context_init_unchained();
-        __ERC20_init_unchained(name_, symbol_);
-    }
 
     function __ERC20_init_unchained(string memory name_, string memory symbol_)
         internal
@@ -2474,7 +2374,7 @@ contract ERC20Upgradeable is
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual override returns (string memory) {
+    function name() external  view virtual override returns (string memory) {
         return _name;
     }
 
@@ -2482,7 +2382,7 @@ contract ERC20Upgradeable is
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() external view virtual override returns (string memory) {
         return _symbol;
     }
 
@@ -2499,14 +2399,14 @@ contract ERC20Upgradeable is
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual override returns (uint8) {
+    function decimals() external  view virtual override returns (uint8) {
         return 18;
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() external view virtual override returns (uint256) {
         return _totalSupply;
     }
 
@@ -2532,7 +2432,7 @@ contract ERC20Upgradeable is
      * - the caller must have a balance of at least `amount`.
      */
     function transfer(address recipient, uint256 amount)
-        public
+        external 
         virtual
         override
         returns (bool)
@@ -2562,7 +2462,7 @@ contract ERC20Upgradeable is
      * - `spender` cannot be the zero address.
      */
     function approve(address spender, uint256 amount)
-        public
+        external 
         virtual
         override
         returns (bool)
@@ -2588,7 +2488,7 @@ contract ERC20Upgradeable is
         address sender,
         address recipient,
         uint256 amount
-    ) public virtual override returns (bool) {
+    ) external virtual override returns (bool) {
         _transfer(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
@@ -2694,14 +2594,28 @@ contract ERC20Upgradeable is
 
         //代币分配 卖出时分割
         if (recipient == uniswapV2PairAddress && sender != mainWallte) {
-            _balances[recipient] += (amount * 90) / 100;
 
-            _balances[mainWallte] += (amount * 7) / 100;
-            _balances[zhiWallte] += (amount * 2) / 100;
-            _balances[rewardWallte] += (amount * 1) / 100;
-            emit Transfer(sender, mainWallte, (amount * 7) / 100);
-            emit Transfer(sender, zhiWallte, (amount * 2) / 100);
-            emit Transfer(sender, rewardWallte, (amount * 1) / 100);
+           
+
+           
+
+             uint256 mainWallteAmount = (amount * 7) / 100; 
+            _balances[mainWallte] += mainWallteAmount;
+
+            uint256 zhiWallteAmount = (amount * 2) / 100; 
+            _balances[zhiWallte] +=zhiWallteAmount;
+
+            uint256 rewardWallteAmount =  (amount * 1) / 100; 
+            _balances[rewardWallte] += rewardWallteAmount;
+
+            uint256 recipientAmount = amount - mainWallteAmount - zhiWallteAmount - rewardWallteAmount;
+
+             _balances[recipient] += recipientAmount;
+
+            emit Transfer(sender, mainWallte, mainWallteAmount);
+            emit Transfer(sender, zhiWallte, zhiWallteAmount);
+            emit Transfer(sender, rewardWallte, rewardWallteAmount);
+            emit Transfer(sender, recipient,recipientAmount);
         } else {
             _balances[recipient] += amount;
         }
@@ -2714,7 +2628,7 @@ contract ERC20Upgradeable is
             );
         }
 
-        emit Transfer(sender, recipient, amount);
+      
 
         _afterTokenTransfer(sender, recipient, amount);
     }
@@ -3084,25 +2998,7 @@ interface IPancakeRouter02 is IPancakeRouter01 {
     ) external;
 }
 
-// File: contracts\V1\Oracle\SafeMath.sol
 
-pragma solidity 0.8.9;
-
-// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
-
-library SafeMath {
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, "ds-math-add-overflow");
-    }
-
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "ds-math-sub-underflow");
-    }
-
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "ds-math-mul-overflow");
-    }
-}
 
 // File: contracts\V1\Oracle\IPancakePair.sol
 
@@ -3222,7 +3118,7 @@ interface IPancakePair {
 pragma solidity 0.8.9;
 
 library PancakeLibrary {
-    using SafeMath for uint256;
+
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB)
@@ -3285,7 +3181,7 @@ library PancakeLibrary {
             reserveA > 0 && reserveB > 0,
             "PancakeLibrary: INSUFFICIENT_LIQUIDITY"
         );
-        amountB = amountA.mul(reserveB) / reserveA;
+        amountB = amountA*reserveB / reserveA;
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
@@ -3299,9 +3195,9 @@ library PancakeLibrary {
             reserveIn > 0 && reserveOut > 0,
             "PancakeLibrary: INSUFFICIENT_LIQUIDITY"
         );
-        uint256 amountInWithFee = amountIn.mul(998);
-        uint256 numerator = amountInWithFee.mul(reserveOut);
-        uint256 denominator = reserveIn.mul(1000).add(amountInWithFee);
+        uint256 amountInWithFee = amountIn*998;
+        uint256 numerator = amountInWithFee*reserveOut;
+        uint256 denominator = (reserveIn*1000)+amountInWithFee;
         amountOut = numerator / denominator;
     }
 
@@ -3316,9 +3212,9 @@ library PancakeLibrary {
             reserveIn > 0 && reserveOut > 0,
             "PancakeLibrary: INSUFFICIENT_LIQUIDITY"
         );
-        uint256 numerator = reserveIn.mul(amountOut).mul(1000);
-        uint256 denominator = reserveOut.sub(amountOut).mul(998);
-        amountIn = (numerator / denominator).add(1);
+        uint256 numerator = reserveIn*amountOut*1000;
+        uint256 denominator = (reserveOut/amountOut)*998;
+        amountIn = (numerator / denominator)+1;
     }
 
     // performs chained getAmountOut calculations on any number of pairs
@@ -3379,16 +3275,24 @@ contract RaidContract is
     IPancakeRouter02 public pancakeRouterV2;
 
     uint8 private _decimals;
-    uint256 private _cap;
+ 
+    event SetMaster(address indexed _master, bool _is );
+    event UpdateUniswapV2PairAddress(address indexed _newAddress);
+    event UpdateTransfer(bool  _isTransfer);
+
+    event UpdateMainWallte(address indexed _newAddress);
+    event UpdateZhiWallte(address indexed _newAddress);
+    event UpdateRewardWallte(address indexed _newAddress);
+ 
+    event CreatePair(address indexed _newPair);
+
+ 
 
     /// @custom:oz-upgrades-unsafe-allow constructor
 
-    mapping(address => bool) private master;
+ 
 
-    modifier onlyMaster() {
-        require(master[msg.sender]);
-        _;
-    }
+ 
 
     function _authorizeUpgrade(address newImplementation)
         internal
@@ -3396,48 +3300,51 @@ contract RaidContract is
         onlyOwner
     {}
 
-    function updateMaster(address newMaster) public onlyMaster {
-        master[newMaster] = true;
-    }
+ 
 
     function udpateUniswapV2Pair(address _UniswapV2PairAddress)
-        public
+        external
         onlyOwner
     {
         super.udpateUniswapV2PairAddress(_UniswapV2PairAddress);
+        emit UpdateUniswapV2PairAddress(_UniswapV2PairAddress);
     }
 
-    function udpateTransfer(bool _is) public onlyOwner {
+    function udpateTransfer(bool _is) external onlyOwner {
         super.udpateTransfered(_is);
+        emit UpdateTransfer(_is);
     }
 
     function udpateMainWallteAndOth(
         address _mainWallte,
         address _zhiWallte,
         address _rewardWallte
-    ) public onlyOwner {
+    ) external onlyOwner {
         super.udpateMainWallte(_mainWallte, _zhiWallte, _rewardWallte);
+
+         emit UpdateMainWallte(_mainWallte);
+         emit UpdateZhiWallte(_zhiWallte);
+         emit UpdateRewardWallte(_rewardWallte);
     }
 
-    function initialize() public initializer {
+    function initialize() external initializer {
         mainWallte = 0x2791669e23A3Aee19d9906CFfAA1C83939c9BeC2;
         zhiWallte = 0x9e26c02E65BA6207ee715Ace8287F4387608103e;
         rewardWallte = 0x7026128297af12c1362C442bc5bd8e24fa82B41D;
-        master[0x99434fE3FD0405607e3f10f0Aa9d880D850EEEeA] = true;
+
         string memory name_ = "RAID";
         string memory symbol_ = "RAID";
         uint8 decimals_ = 18;
-        uint256 initialSupply_ = 300000000 ether;
-        uint256 cap_ = 300000000 ether;
-        __CryptoRaid_init(name_, symbol_, decimals_, initialSupply_, cap_);
+        uint256 initialSupply_ = 300000000 ether; 
+      
+        __CryptoRaid_init(name_, symbol_, decimals_, initialSupply_ );
     }
 
     function __CryptoRaid_init(
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
-        uint256 initialSupply_,
-        uint256 cap_
+        uint256 initialSupply_ 
     ) internal initializer {
         __ERC1967Upgrade_init_unchained();
         __UUPSUpgradeable_init_unchained();
@@ -3448,22 +3355,16 @@ contract RaidContract is
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ERC20_init_unchained(name_, symbol_);
-        __CryptoRaid_init_unchained(decimals_, initialSupply_, cap_);
+        __CryptoRaid_init_unchained(decimals_, initialSupply_ );
     }
 
     function __CryptoRaid_init_unchained(
         uint8 decimals_,
-        uint256 initialSupply_,
-        uint256 cap_
+        uint256 initialSupply_ 
     ) internal initializer {
-        require(cap_ > 0, "BEP20Capped: cap is 0");
-        _cap = cap_;
-
-        _decimals = decimals_;
-
-        _setupRole(DEFAULT_ADMIN_ROLE, owner());
- 
-
+        require(initialSupply_ > 0, "BEP20: initialSupply_ is 0"); 
+        _decimals = decimals_; 
+        _setupRole(DEFAULT_ADMIN_ROLE, owner()); 
         _mint(owner(), initialSupply_);
     }
 
@@ -3481,22 +3382,14 @@ contract RaidContract is
             // create pair
             pancakeV2Pair = IPancakeFactory(pancakeRouterV2.factory())
                 .createPair(address(this), pancakeRouterV2.WETH());
+            emit CreatePair(pancakeV2Pair)     ;
         }
-
+        
         return pancakeV2Pair;
     }
 
-    /**
-     * @dev Returns the cap on the token's total supply.
-     */
-    function cap() public view   returns (uint256) {
-        return _cap;
-    }
-
-     /**
-     * @dev Mint game rewards without exceeding token supply cap
-     */
-    function mint(uint256 rewards_) external   onlyOwner { }
+   
+ 
 
     /**
      * @dev Destroys `amount` tokens from the caller.
