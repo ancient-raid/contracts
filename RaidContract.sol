@@ -3276,7 +3276,7 @@ contract RaidContract is
 
     uint8 private _decimals;
  
-    event SetMaster(address indexed _master, bool _is );
+
     event UpdateUniswapV2PairAddress(address indexed _newAddress);
     event UpdateTransfer(bool  _isTransfer);
 
