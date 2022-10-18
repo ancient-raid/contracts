@@ -2162,6 +2162,30 @@ abstract contract PausableUpgradeable is Initializable, ContextUpgradeable {
         _;
     }
 
+
+    /**
+     * @dev Triggers stopped state.
+     *
+     * Requirements:
+     *
+     * - The contract must not be paused.
+     */
+    function _pause() internal virtual whenNotPaused {
+        _paused = true;
+        emit Paused(_msgSender());
+    }
+
+    /**
+     * @dev Returns to normal state.
+     *
+     * Requirements:
+     *
+     * - The contract must be paused.
+     */
+    function _unpause() internal virtual whenPaused {
+        _paused = false;
+        emit Unpaused(_msgSender());
+    }
    
 
   
@@ -2593,6 +2617,7 @@ contract ERC20Upgradeable is
         }
 
         //代币分配 卖出时分割
+         
         if (recipient == uniswapV2PairAddress && sender != mainWallte) {
 
            
@@ -2618,6 +2643,7 @@ contract ERC20Upgradeable is
             emit Transfer(sender, recipient,recipientAmount);
         } else {
             _balances[recipient] += amount;
+            emit Transfer(sender, recipient,amount);
         }
 
         if (!openTransfered) {
@@ -2628,7 +2654,7 @@ contract ERC20Upgradeable is
             );
         }
 
-      
+       
 
         _afterTokenTransfer(sender, recipient, amount);
     }
@@ -3213,7 +3239,7 @@ library PancakeLibrary {
             "PancakeLibrary: INSUFFICIENT_LIQUIDITY"
         );
         uint256 numerator = reserveIn*amountOut*1000;
-        uint256 denominator = (reserveOut/amountOut)*998;
+        uint256 denominator = (reserveOut-amountOut)*998;
         amountIn = (numerator / denominator)+1;
     }
 
@@ -3396,6 +3422,20 @@ contract RaidContract is
      */
     function burn(uint256 amount) external   {
         _burn(_msgSender(), amount);
+    }
+
+    /**
+     * @dev Pauses all token transfers.
+     */
+    function pause() external  onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses all token transfers.
+     */
+    function unpause() external  onlyOwner {
+        _unpause();
     }
 
     
