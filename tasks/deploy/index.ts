@@ -11,16 +11,18 @@ import type {
   Hero__factory,
   Marketplace,
   Marketplace__factory,
-  MockToken,
-  MockToken__factory,
-  Multicall2,
-  Multicall2__factory,
   ProxyAdmin,
   ProxyAdmin__factory,
   StakingPhase1,
   StakingPhase1__factory,
   TransparentUpgradeableProxy,
   TransparentUpgradeableProxy__factory,
+  Warrior,
+  Warrior__factory,
+  WarriorMint,
+  WarriorMint__factory,
+  BlackCard,
+  BlackCard__factory
 } from "../../src/types";
 import deployment from "../deployment.json";
 
@@ -91,10 +93,13 @@ task("deploy:GetHeroMint").setAction(async function (taskArguments: TaskArgument
   const mintFactory: HeroMint__factory = <HeroMint__factory>await ethers.getContractFactory("HeroMint");
   const heroMint = <HeroMint>await mintFactory.connect(signers[0]).attach(config.HeroMintV3);
 
-  const recipient = await heroMint.recipient();
-  const invitation = await heroMint.invitation();
-  console.log("HeroMint recipient : ", recipient);
-  console.log("HeroMint invitation : ", invitation);
+  const tx = await heroMint.transferOwnership('0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359')
+  const receipt = await tx.wait()
+  console.log("transferOwnership = ", receipt.status)
+  // const recipient = await heroMint.recipient();
+  // const invitation = await heroMint.invitation();
+  // console.log("HeroMint recipient : ", recipient);
+  // console.log("HeroMint invitation : ", invitation);
 });
 
 task("deploy:HeroSetup").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
@@ -181,7 +186,7 @@ task("deploy:SetStaking").setAction(async function (taskArguments: TaskArguments
   const staking = await stakingFactory.connect(signers[0]).attach(config.ProxyStakingPhase1);
 
   const startBlock = 21810772;
-  const endBlock = 28800 * 30 + startBlock;
+  const endBlock = 28800 * 30 * 2 + startBlock;
   const tx = await staking.setRewardBlocks(startBlock, endBlock);
   const receipt = await tx.wait();
   console.log("setRewardBlocks finished = ", receipt.status);
@@ -259,4 +264,110 @@ task("init").setAction(async function (taskArguments: TaskArguments, { ethers, n
   // const iface = new ethers.utils.Interface(["function checkStakedOwner(uint256 tokenId)"]);
   // const data = iface.encodeFunctionData("checkStakedOwner", [ 50 ]);
   // console.log('data = ', data)
+});
+
+
+task("deploy:Warrior").setAction(async function (taskArguments: TaskArguments, { ethers }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const factory: Warrior__factory = <Warrior__factory>await ethers.getContractFactory("Warrior");
+  const warrior = <Warrior>await factory.connect(signers[0]).deploy();
+  await warrior.deployed();
+  console.log("Warrior deployed to: ", warrior.address);
+});
+
+task("deploy:BlackCard").setAction(async function (taskArguments: TaskArguments, { ethers }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const factory: BlackCard__factory = <BlackCard__factory>await ethers.getContractFactory("BlackCard");
+  const contract = <BlackCard>await factory.connect(signers[0]).deploy();
+  await contract.deployed();
+  console.log("BlackCard deployed to: ", contract.address);
+});
+
+task("deploy:WarriorProxy").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const logic = config.Warrior;
+  const admin = config.ProxyAdmin;
+  const data = ethers.utils.id("initialize()").slice(0, 10);
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const proxyFactory = <TransparentUpgradeableProxy__factory>(
+    await ethers.getContractFactory("TransparentUpgradeableProxy")
+  );
+  const proxy = await proxyFactory.connect(signers[0]).deploy(logic, admin, data);
+  await proxy.deployed();
+  console.log("WarriorProxy deployed to: ", proxy.address);
+});
+
+// address raid_,
+// address busd_,
+// address warrior_,
+// address blackCard_,
+// address gold_,
+// address silver_,
+// address copper_
+
+task("deploy:WarriorMint").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const factory: WarriorMint__factory = <WarriorMint__factory>await ethers.getContractFactory("WarriorMint");
+  const config = (deployment as any)[network.name];
+
+  const raid = config.RAID
+  const busd = config.BUSD
+  const warrior = config.WarriorProxy
+  const blackCard = config.BlackCard
+  const gold = config.Gold
+  const silver = config.Silver
+  const copper = config.Copper
+
+  const warriorMint = <WarriorMint>await factory.connect(signers[0]).deploy(
+    raid,
+    busd,
+    warrior,
+    blackCard,
+    gold,
+    silver,
+    copper
+  );
+  await warriorMint.deployed();
+  console.log("WarriorMint deployed to: ", warriorMint.address);
+});
+
+
+task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const config = (deployment as any)[network.name];
+
+  const warriorFactory = <Warrior__factory>await ethers.getContractFactory("Warrior");
+  const warrior = await warriorFactory.connect(signers[0]).attach(config.WarriorProxy);
+  const isMinter = await warrior.isMinter(config.WarriorMint)
+  console.log("isMinter = ", isMinter)
+
+  // const tx = await warrior.setMinter(config.WarriorMint, true);
+  // const receipt = await tx.wait();
+
+  {
+    const warriorMintFactory = <WarriorMint__factory>await ethers.getContractFactory("WarriorMint");
+    const warriorMint = await warriorMintFactory.connect(signers[0]).attach(config.WarriorMint);
+    const warrior = await warriorMint.warrior()
+    console.log(warrior)
+    const tx = await warriorMint.setBusdPrice(0);
+    const receipt = await tx.wait();
+    console.log("setBusdPrice = ", receipt.status)
+  }
+  
+
+  // console.log("warrior setMinter = ", receipt.status);
+  // await hero.setBlacklist(config.Blacklist)
+  // console.log("setBlacklist completed")
+  // await warrior.setBaseURI("https://metadata.ancientraid.com/warrior/metadata/")
+  // console.log("setMetadata completed")
+
+  {
+    const blackCardFactory = <BlackCard__factory>await ethers.getContractFactory("BlackCard");
+    const blackCard = await blackCardFactory.connect(signers[0]).attach(config.BlackCard);
+    const isMinter = await blackCard.isMinter(config.WarriorMint)
+    console.log("isMinter = ", isMinter)
+    // const tx = await blackCard.setMinter(config.WarriorMint, true)
+    // const receipt = await tx.wait();
+    // console.log("blackCard setMinter = ", receipt.status);
+  }
 });

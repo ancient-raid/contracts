@@ -3,32 +3,59 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./IBlacklist.sol";
 
 contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     enum SpendCoin {
-        Copper,
+        Gold,
         Silver,
-        Gold
+        Copper,
+        Busd
     }
 
     struct Trait {
         uint8 race;
         uint8 attribute;
-        uint8 level;
+        bool active;
         uint16 life;
+        uint256 power;
     }
 
+    string public baseURI;
     uint256 private nonce;
+    address public blacklist;
     mapping(uint256 => Trait) private traits;
     mapping(address => bool) public isMinter;
+    mapping(address => bool) public isOperator;
 
     function initialize() public initializer {
         __Ownable_init();
         __ERC721_init("Raid Warrior", "WARRIOR");
     }
 
+    modifier checkBlacklisted(address operator) {
+        require(!IBlacklist(blacklist).isBlocked(operator), "Warrior: Blocked operator");
+        _;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
+    }
+
+    function setBaseURI(string memory uri_) external onlyOwner {
+        baseURI = uri_;
+    }
+
+    function setBlacklist(address blacklist_) external onlyOwner {
+        blacklist = blacklist_;
+    }
+
     function setMinter(address minter_, bool b_) external onlyOwner {
         isMinter[minter_] = b_;
+    }
+
+    function setOperator(address operator_, bool b_) external onlyOwner {
+        isOperator[operator_] = b_;
     }
 
     function _generateRace(uint256 seed, SpendCoin spendCoin) internal pure returns (uint8) {
@@ -91,9 +118,31 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
             return race;
         }
 
+
+        if(spendCoin == SpendCoin.Busd) {
+            if (seed < 400) {
+                race = 1;
+            } else if (seed >= 400 && seed < 650) {
+                race = 2;
+            } else if (seed >= 650 && seed < 850) {
+                race = 3;
+            } else if (seed >= 850 && seed < 950) {
+                race = 4;
+            } else {
+                race = 5;
+            }
+            return race;
+        }
+
         return race;
     }
 
+    // 人50%
+    // 妖25%
+    // 獸17%
+    // 龍7%
+    // 神1%
+    // （木35%>水25%>火20%>暗12%>光8%）
     function _generateAttribute(uint256 seed) internal pure returns (uint8) {
         uint8 attribute;
         if (seed < 35) {
@@ -110,20 +159,76 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         return attribute;
     }
 
+    function _calcPower(uint8 race) internal pure returns(uint256) {
+        uint256 power = 10;
+        if(race == 1) {
+            power = 10;
+        } else if(race == 2) {
+            power = 20;
+        } else if(race == 3) {
+            power = 40;
+        } else if(race == 4) {
+            power = 50;
+        } else if(race == 5) {
+            power = 80;
+        }
+        return power;
+    }
+
     function mint(address to, SpendCoin spendCoin) external {
         require(isMinter[_msgSender()], "Not minter");
         uint256 tokenId = totalSupply() + 1;
         _mint(to, tokenId);
         uint256 rand = random(tokenId);
+        uint8 race =  _generateRace((rand >> 240) % 1000, spendCoin);
         traits[tokenId] = Trait({
-            race: _generateRace((rand >> 240) % 1000, spendCoin),
+            race: race,
             attribute: _generateAttribute((rand & 0xffff) % 100),
-            level: 1,
-            life: 300
+            power: _calcPower(race),
+            life: 30,
+            active: false
         });
     }
 
+    function getTraits(uint256 tokenId) public view returns (Trait memory) {
+        _requireMinted(tokenId);
+        return traits[tokenId];
+    }
+
+    function setTraits(
+        uint256 tokenId,
+        uint16 life,
+        bool active
+    ) external {
+        require(isOperator[_msgSender()], "Not operator");
+        traits[tokenId].life = life;
+        traits[tokenId].active = active;
+    }
+
+
     function random(uint256 seed) internal returns (uint256) {
         return uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, nonce++, seed)));
+    }
+
+    function _setApprovalForAll(
+        address owner,
+        address operator,
+        bool approved
+    ) internal override checkBlacklisted(operator) {
+        super._setApprovalForAll(owner, operator, approved);
+    }
+
+    function _approve(address to, uint256 tokenId) internal override checkBlacklisted(to) {
+        super._approve(to, tokenId);
+    }
+
+    function _isApprovedOrOwner(address spender, uint256 tokenId)
+        internal
+        view
+        override
+        checkBlacklisted(spender)
+        returns (bool)
+    {
+        return super._isApprovedOrOwner(spender, tokenId);
     }
 }

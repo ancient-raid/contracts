@@ -43,7 +43,7 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
       jsonRpcUrl = "https://api.avax.network/ext/bc/C/rpc";
       break;
     case "bsc":
-      jsonRpcUrl = "https://bsc-dataseed4.binance.org";
+      jsonRpcUrl = "https://bscrpc.com" //"https://bsc-dataseed4.binance.org";
       break;
     case "bsc-testnet":
       jsonRpcUrl = "https://data-seed-prebsc-2-s1.binance.org:8545";
@@ -123,7 +123,7 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     clear: true,
     flat: true,
-    only: [":Hero", ":HeroMint", ":StakingPhase1", ":Marketplace"],
+    only: [":Hero", ":HeroMint", ":StakingPhase1", ":Marketplace", ":Warrior"],
     spacing: 2,
     format: "json",
   },
