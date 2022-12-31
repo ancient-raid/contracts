@@ -10,6 +10,12 @@ interface IERC721TokenURI {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
+interface IRaidNFT {
+    function isBlocked(uint256) external view returns (bool);
+    function mintedAt(uint256) external view returns (uint256);
+}
+
+
 contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     struct Order {
         uint256 id;
@@ -41,6 +47,13 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event Buy(address indexed buyer, address indexed seller, address nftAddr, uint256 nftId, uint256 price);
     event ChangePrice(address indexed user, address nftAddr, uint256 nftId, uint256 newPrice);
 
+    mapping(address => uint256) public floorPrices;
+
+    mapping(address => bool) isRaidNFT;
+
+    uint256 public cooldown;
+
+
     function initialize() public initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
@@ -59,6 +72,36 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         isOperator[address(0x62d9bF5544314b3fC46E2Aa4Fd661C2213d1Ec1A)] = true;
     }
 
+    function reinitialize3() public reinitializer(3) {
+        floorPrices[address(0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8)] = floorPrice;
+    }
+
+    function reinitialize4() public reinitializer(4) {
+        isRaidNFT[address(0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8)] = true;
+        isRaidNFT[address(0x0d9eb3079Dbf1Df9715B47DA98a3BacaeD28c49C)] = true;
+        cooldown = 12 * 3600;
+    }
+
+    function setRaidNFT(address nftAddr_, bool b_) external onlyOwner {
+        isRaidNFT[nftAddr_] = b_;
+    }
+
+    function setCooldown(uint256 cooldown_) external onlyOwner {
+        cooldown = cooldown_;
+    }
+
+    function checkBlocked(address nftAddr_, uint256 nftId_) internal view {
+        if(isRaidNFT[nftAddr_]) {
+            require(!IRaidNFT(nftAddr_).isBlocked(nftId_), "Blocked NFT");
+        }
+    }
+
+    function checkList(address nftAddr_, uint256 nftId_) internal view {
+        if(isRaidNFT[nftAddr_]) {
+            require(IRaidNFT(nftAddr_).mintedAt(nftId_) + cooldown < block.timestamp, "Not allowed to list now");
+        }
+    }
+
     function setOperator(address operator_, bool b_) external onlyOwner {
         isOperator[operator_] = b_;
     }
@@ -66,6 +109,12 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function setFloorPrice(uint256 price_) external {
         require(isOperator[msg.sender], "Not operator");
         floorPrice = price_;
+        floorPrices[address(0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8)] = floorPrice;
+    }
+
+    function setFloorPriceV2(address nftAddr_, uint256 price_) external {
+        require(isOperator[msg.sender], "Not operator");
+        floorPrices[nftAddr_] = price_;
     }
 
     function setFee(uint256 _fee) external onlyOwner {
@@ -89,8 +138,11 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 nftId,
         uint256 price
     ) public nonReentrant {
-        require(price >= floorPrice, "Price is lower than floor price");
+        require(price >= floorPrices[nftAddr], "Price is lower than floor price");
         require(supportedNfts[nftAddr], "Not supported NFT");
+        checkBlocked(nftAddr, nftId);
+        checkList(nftAddr, nftId);
+
         address owner = IERC721(nftAddr).ownerOf(nftId);
         require(owner == msg.sender, "Not owner");
         require(price > 0, "Price is 0");
@@ -147,6 +199,7 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function buy(uint256 orderId) public nonReentrant {
         Order storage order = orders[orderId];
         require(order.id > 0, "Invalid OrderId");
+        checkBlocked(order.nftAddr, order.nftId);
         uint256 protocolFee = (order.price * fee) / feeMax;
 
         paymentToken.transferFrom(msg.sender, order.owner, order.price - protocolFee);
@@ -158,8 +211,8 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function changePrice(uint256 orderId, uint256 price) public nonReentrant {
-        require(price >= floorPrice, "Price is lower than floor price");
         Order storage order = orders[orderId];
+        require(price >= floorPrices[order.nftAddr], "Price is lower than floor price");
         require(order.id > 0, "Invalid OrderId");
         require(order.price != price, "Same price");
         require(msg.sender == order.owner, "Not NFT Owner");
@@ -193,7 +246,8 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             uint256 price,
             uint256 createdAt,
             address owner,
-            string memory tokenURI
+            string memory tokenURI,
+            bool blocked
         )
     {
         Order memory order = orders[_id];
@@ -204,6 +258,12 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         createdAt = order.createdAt;
         owner = order.owner;
         tokenURI = IERC721TokenURI(nftAddr).tokenURI(nftId);
+
+        if(isRaidNFT[order.nftAddr]) {
+            blocked = IRaidNFT(order.nftAddr).isBlocked(order.nftId);
+        } else {
+            blocked = false;
+        }
     }
 
     function getOrderByIndex(uint256 index)
@@ -216,7 +276,8 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             uint256 price,
             uint256 createdAt,
             address owner,
-            string memory tokenURI
+            string memory tokenURI,
+            bool blocked
         )
     {
         return getOrder(orderIds[index]);
@@ -232,7 +293,8 @@ contract Marketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             uint256 price,
             uint256 createdAt,
             address owner,
-            string memory tokenURI
+            string memory tokenURI,
+            bool blocked
         )
     {
         return getOrder(userOrderIds[user][index]);

@@ -72,6 +72,7 @@ task("deploy:Proxy").setAction(async function (taskArguments: TaskArguments, { e
   console.log("Proxy deployed to: ", proxy.address);
 });
 
+
 task("deploy:HeroMint").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
   const signers: SignerWithAddress[] = await ethers.getSigners();
   const config = (deployment as any)[network.name];
@@ -108,9 +109,12 @@ task("deploy:HeroSetup").setAction(async function (taskArguments: TaskArguments,
   const heroFactory = <Hero__factory>await ethers.getContractFactory("Hero");
   const hero = await heroFactory.connect(signers[0]).attach(config.HeroProxy);
 
-  const tx = await hero.setMinter(config.HeroMintV3, true);
-  const receipt = await tx.wait();
-  console.log("setMinter = ", receipt.status);
+  // const tx = await hero.setMinter(config.HeroMintV3, true);
+  // const receipt = await tx.wait();
+  // console.log("setMinter = ", receipt.status);
+
+  const isAdmin = await hero.isAdmin('0xb5806BaC44B345A8505A90e1cEA9266a6A329129')
+  console.log(isAdmin);
 
   // await hero.setBlacklist(config.Blacklist)
   // console.log("setBlacklist completed")
@@ -124,7 +128,7 @@ task("deploy:setBlacklist").setAction(async function (taskArguments: TaskArgumen
   const blacklistFactory = <Blacklist__factory>await ethers.getContractFactory("Blacklist");
   const blacklist = await blacklistFactory.connect(signers[0]).attach(config.Blacklist);
 
-  const tx = await blacklist.add([config.ToFunFT]);
+  const tx = await blacklist.add([config.Opensea]);
   const receipt = await tx.wait();
   console.log("Blacklist added = ", receipt.status);
 });
@@ -186,7 +190,7 @@ task("deploy:SetStaking").setAction(async function (taskArguments: TaskArguments
   const staking = await stakingFactory.connect(signers[0]).attach(config.ProxyStakingPhase1);
 
   const startBlock = 21810772;
-  const endBlock = 28800 * 30 * 2 + startBlock;
+  const endBlock = 23550423 //28800 * 30 * 2 + startBlock;
   const tx = await staking.setRewardBlocks(startBlock, endBlock);
   const receipt = await tx.wait();
   console.log("setRewardBlocks finished = ", receipt.status);
@@ -218,17 +222,6 @@ task("deploy:ProxyMarketplace").setAction(async function (taskArguments: TaskArg
   console.log("ProxyMarketplace deployed to: ", proxy.address);
 });
 
-task("deploy:UpgradeMarketplace").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
-  const signers: SignerWithAddress[] = await ethers.getSigners();
-  const config = (deployment as any)[network.name];
-
-  const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
-  const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  const data = ethers.utils.id("reinitialize()").slice(0, 10);
-  const tx = await proxyAdmin.upgradeAndCall(config.ProxyMarketplace, config.MarketplaceV2, data);
-  const receipt = await tx.wait();
-  console.log("upgrade Marketplace = : ", receipt.status);
-});
 
 task("deploy:SetMarketplace").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
   const config = (deployment as any)[network.name];
@@ -236,9 +229,9 @@ task("deploy:SetMarketplace").setAction(async function (taskArguments: TaskArgum
   const marketplaceFactory = <Marketplace__factory>await ethers.getContractFactory("Marketplace");
   const marketplace = await marketplaceFactory.connect(signers[0]).attach(config.ProxyMarketplace);
 
-  // let tx = await marketplace.setFloorPrice(ethers.utils.parseEther('5358'))
-  // let receipt = await tx.wait()
-  // console.log("setFloorPrice = ", receipt.status)
+  let tx = await marketplace.addNFT(config.WarriorProxy)
+  let receipt = await tx.wait()
+  console.log("addNFT = ", receipt.status)
 });
 
 task("deploy:setConfig").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
@@ -338,21 +331,72 @@ task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArgumen
 
   const warriorFactory = <Warrior__factory>await ethers.getContractFactory("Warrior");
   const warrior = await warriorFactory.connect(signers[0]).attach(config.WarriorProxy);
-  const isMinter = await warrior.isMinter(config.WarriorMint)
-  console.log("isMinter = ", isMinter)
 
+  // console.log(await warrior.getTraits(73))
+  // console.log(await warrior.getTraits(79))
+
+  // const isAdmin = await warrior.isAdmin("0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359")
+  // console.log("isAdmin = ", isAdmin)
+
+
+  // const tx = await warrior.setAdmin(signers[0].address, true);
+  // const receipt = await tx.wait();
+  // console.log("warrior setAdmin = ", receipt.status)
+
+
+  const blacklistedIds = [3764, 3851, 3852]
+
+  console.log("3764 isBlocked = ", await warrior.isBlocked(3764))
+  console.log("3851 isBlocked = ", await warrior.isBlocked(3851))
+  console.log("3852 isBlocked = ", await warrior.isBlocked(3852))
+  // {
+  //   const tx = await warrior.setBlocked(3764, true);
+  //   const receipt = await tx.wait();
+  //   console.log("warrior setBlocked = ", receipt.status)
+  // }
+  
+  // {
+  //   const tx = await warrior.setBlocked(3851, true);
+  //   const receipt = await tx.wait();
+  //   console.log("warrior setBlocked = ", receipt.status)
+  // }
+  
+  // {
+  //   const tx = await warrior.setBlocked(3852, true);
+  //   const receipt = await tx.wait();
+  //   console.log("warrior setBlocked = ", receipt.status)
+  // }
+  
+
+  // // const isMinter = await warrior.isMinter(config.WarriorMint)
+  // // console.log("isMinter = ", isMinter)
   // const tx = await warrior.setMinter(config.WarriorMint, true);
   // const receipt = await tx.wait();
+  // console.log("warrior setMinter = ", receipt.status)
 
-  {
-    const warriorMintFactory = <WarriorMint__factory>await ethers.getContractFactory("WarriorMint");
-    const warriorMint = await warriorMintFactory.connect(signers[0]).attach(config.WarriorMint);
-    const warrior = await warriorMint.warrior()
-    console.log(warrior)
-    const tx = await warriorMint.setBusdPrice(0);
-    const receipt = await tx.wait();
-    console.log("setBusdPrice = ", receipt.status)
-  }
+  // {
+  //   const tx = await warrior.setBaseURI("https://metadata.ancientraid.com/warrior/metadata/")
+  //   const receipt = await tx.wait();
+  //   console.log("setMetadata completed = ", receipt.status)
+  // }
+  
+  // {
+  //   await warrior.setBlacklist(config.Blacklist)
+  //   const receipt = await tx.wait();
+  //   console.log("setBlacklist completed = ", receipt.status)
+  // }
+  
+
+  // {
+  //   const warriorMintFactory = <WarriorMint__factory>await ethers.getContractFactory("WarriorMint");
+  //   const warriorMint = await warriorMintFactory.connect(signers[0]).attach(config.WarriorMint);
+  //   const warrior = await warriorMint.warrior()
+  //   console.log(warrior)
+  //   const isOperator = await warriorMint.isOperator('0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359');
+  //   console.log("isOperator = ", isOperator)
+  //   // const receipt = await tx.wait();
+  //   // console.log("setBusdPrice = ", receipt.status)
+  // }
   
 
   // console.log("warrior setMinter = ", receipt.status);
@@ -361,13 +405,52 @@ task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArgumen
   // await warrior.setBaseURI("https://metadata.ancientraid.com/warrior/metadata/")
   // console.log("setMetadata completed")
 
-  {
-    const blackCardFactory = <BlackCard__factory>await ethers.getContractFactory("BlackCard");
-    const blackCard = await blackCardFactory.connect(signers[0]).attach(config.BlackCard);
-    const isMinter = await blackCard.isMinter(config.WarriorMint)
-    console.log("isMinter = ", isMinter)
-    // const tx = await blackCard.setMinter(config.WarriorMint, true)
-    // const receipt = await tx.wait();
-    // console.log("blackCard setMinter = ", receipt.status);
-  }
+  // {
+  //   const blackCardFactory = <BlackCard__factory>await ethers.getContractFactory("BlackCard");
+  //   const blackCard = await blackCardFactory.connect(signers[0]).attach(config.BlackCard);
+  //   const isMinter = await blackCard.isMinter(config.WarriorMint)
+  //   console.log("isMinter = ", isMinter)
+  //   const tx = await blackCard.setMinter(config.WarriorMint, true)
+  //   const receipt = await tx.wait();
+  //   console.log("blackCard setMinter = ", receipt.status);
+  // }
+});
+
+
+task("deploy:UpgradeHero").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+
+  const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
+  const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
+  const data = ethers.utils.id("reinitialize()").slice(0, 10);
+  const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV2, data);
+  const receipt = await tx.wait();
+  console.log("upgrade Hero =  ", receipt.status);
+});
+
+
+
+task("deploy:UpgradeWarrior").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  
+  const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
+  const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
+  const data = ethers.utils.id("reinitialize()").slice(0, 10);
+  const tx = await proxyAdmin.upgradeAndCall(config.WarriorProxy, config.WarriorV2, data);
+  const receipt = await tx.wait();
+  console.log("upgrade Warrior =  ", receipt.status);
+});
+
+task("deploy:UpgradeMarketplace").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const config = (deployment as any)[network.name];
+
+  const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
+  const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
+  const data = ethers.utils.id("reinitialize4()").slice(0, 10);
+  const tx = await proxyAdmin.upgradeAndCall(config.ProxyMarketplace, config.MarketplaceV4, data);
+  const receipt = await tx.wait();
+  console.log("upgrade Marketplace =  ", receipt.status);
 });

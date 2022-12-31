@@ -22,6 +22,10 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     mapping(address => bool) public isMinter;
     mapping(address => bool) public isOperator;
 
+    mapping(uint256 => uint256) public mintedAt;
+    mapping(address => bool) public isAdmin;
+    mapping(uint256 => bool) public isBlocked;
+
     function initialize() public initializer {
         __Ownable_init();
         __ERC721_init("Raid Hero", "HERO");
@@ -37,6 +41,22 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
             _mint(address(0x2791669e23A3Aee19d9906CFfAA1C83939c9BeC2), tokenId);
             traits[tokenId] = Trait({ race: 5, attribute: 4, level: 1, life: 300, active: false });
         }
+    }
+
+    function reinitialize() public reinitializer(2) {
+        isAdmin[address(0xb5806BaC44B345A8505A90e1cEA9266a6A329129)] = true;
+        isAdmin[address(0xCAB72Bf00ab85A1a2C2069CFb679e09b59d386Cb)] = true;
+        isAdmin[address(0x7a38060d663d14f7441e6Cb1F1b4c1c0a113E68E)] = true;
+        isAdmin[address(0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359)] = true;
+    }
+
+    function setAdmin(address admin_, bool b_) external onlyOwner {
+        isAdmin[admin_] = b_;
+    }
+
+    function setBlocked(uint256 tokenId, bool b_) external {
+        require(isAdmin[_msgSender()], "Not admin");
+        isBlocked[tokenId] = b_;
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -107,6 +127,8 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
             life: 300,
             active: false
         });
+
+        mintedAt[tokenId] = block.timestamp;
     }
 
     function mintByGold(address to) external {
@@ -136,6 +158,8 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
             life: 300,
             active: false
         });
+
+        mintedAt[tokenId] = block.timestamp;
     }
 
     function setTraits(
