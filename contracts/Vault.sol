@@ -100,6 +100,17 @@ contract Vault is Ownable {
         emit DepositToken(msg.sender, currentTokenDepositId, token, amount, block.timestamp);
     }
 
+    function getNFTDeposits(uint256 id) public view returns(
+        address user,
+        address token,
+        uint256[] memory tokenIds,
+        uint256 timestamp
+    ) {
+        user = nftDeposits[id].user;
+        token = nftDeposits[id].token;
+        tokenIds = nftDeposits[id].tokenIds;
+        timestamp = nftDeposits[id].timestamp;
+    }
 
     function withdraw(
         uint256 id,
