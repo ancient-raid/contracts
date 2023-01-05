@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
 
 interface IHero {
     function setTraits(
@@ -24,7 +26,7 @@ interface IWarrior {
     ) external;
 }
 
-contract Vault is Ownable {
+contract Vault is OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     struct Deposit {
@@ -49,8 +51,8 @@ contract Vault is Ownable {
         bool active;
     }
 
-    uint256 public currentTokenDepositId = 0;
-    uint256 public currentNFTDepositId = 0;
+    uint256 public currentTokenDepositId;
+    uint256 public currentNFTDepositId;
 
     address public admin;
     address public signer;
@@ -71,6 +73,15 @@ contract Vault is Ownable {
     event DepositNFT(address indexed user, address token, uint256[] tokenId, uint256 timestamp);
     event WithdrawNFT(address indexed user, address token, uint256 tokenId, uint256 timestamp);
 
+    function initialize() public initializer {
+        __Ownable_init();
+        currentTokenDepositId = 0;
+        currentNFTDepositId = 0;
+        isSupportedToken[address(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56)] = true; // BUSD
+        isSupportedToken[address(0xeb90A6273F616A8ED1cf58A05d3ae1C1129b4DE6)] = true; // RAID
+        isSupportedToken[address(0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8)] = true; // Hero NFT
+        isSupportedToken[address(0x0d9eb3079Dbf1Df9715B47DA98a3BacaeD28c49C)] = true; // Warrior NFT
+    }
 
     function setAdmin(address admin_) external onlyOwner {
         admin = admin_;
@@ -86,8 +97,12 @@ contract Vault is Ownable {
         _; 
     }
 
+    modifier onlySupportedToken(address token) { 
+        require(isSupportedToken[token], "Invalid token");
+        _; 
+    }
     
-    function deposit(address token, uint256 amount) external {
+    function deposit(address token, uint256 amount) external onlySupportedToken(token) {
         require(amount > 0, "Amount is zero");
         tokenDeposits[++currentTokenDepositId] = Deposit({
             user: msg.sender,
@@ -120,7 +135,7 @@ contract Vault is Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
+    ) external onlySupportedToken(token) {
         require(block.timestamp < deadline, "Expired deadline");
         bytes32 hash = ECDSA.toEthSignedMessageHash(abi.encodePacked(id, msg.sender, token, amount, deadline));
         require(!withdrawn[hash], "Already withdrawn");
@@ -131,18 +146,18 @@ contract Vault is Ownable {
         emit WithdrawToken(msg.sender, id, token, amount, block.timestamp);
     }
 
-    function depositNFTs(address nft, uint256[] calldata tokenIds) external {
+    function depositNFTs(address token, uint256[] calldata tokenIds) external onlySupportedToken(token){
         for(uint256 i = 0; i < tokenIds.length; i++) {
-            IERC721(nft).transferFrom(msg.sender, address(this), tokenIds[i]);
+            IERC721(token).transferFrom(msg.sender, address(this), tokenIds[i]);
         }
         nftDeposits[++currentNFTDepositId] = NFTDeposit({
             user: msg.sender,
-            token: nft,
+            token: token,
             tokenIds: tokenIds,
             timestamp: block.timestamp
         });
 
-        emit DepositNFT(msg.sender, nft, tokenIds, block.timestamp);
+        emit DepositNFT(msg.sender, token, tokenIds, block.timestamp);
     }
 
     function withdrawNFT( 
@@ -152,7 +167,7 @@ contract Vault is Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
+    ) public onlySupportedToken(params.token) {
         require(block.timestamp < deadline, "Expired deadline");
         bytes32 hash = ECDSA.toEthSignedMessageHash(abi.encodePacked(id, msg.sender, params.token, params.tokenId, deadline));
         require(!withdrawn[hash], "Already withdrawn");

@@ -22,7 +22,9 @@ import type {
   WarriorMint,
   WarriorMint__factory,
   BlackCard,
-  BlackCard__factory
+  BlackCard__factory,
+  Vault,
+  Vault__factory
 } from "../../src/types";
 import deployment from "../deployment.json";
 
@@ -453,4 +455,46 @@ task("deploy:UpgradeMarketplace").setAction(async function (taskArguments: TaskA
   const tx = await proxyAdmin.upgradeAndCall(config.ProxyMarketplace, config.MarketplaceV4, data);
   const receipt = await tx.wait();
   console.log("upgrade Marketplace =  ", receipt.status);
+});
+
+task("deploy:Vault").setAction(async function (taskArguments: TaskArguments, { ethers }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const vaultFactory: Vault__factory = <Vault__factory>await ethers.getContractFactory("Vault");
+  const vault = <Vault>await vaultFactory.connect(signers[0]).deploy();
+  await vault.deployed();
+  console.log("Vault deployed to: ", vault.address);
+});
+
+task("deploy:VaultProxy").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const logic = config.Vault;
+  const admin = config.ProxyAdmin;
+  const data = ethers.utils.id("initialize()").slice(0, 10);
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const proxyFactory = <TransparentUpgradeableProxy__factory>(
+    await ethers.getContractFactory("TransparentUpgradeableProxy")
+  );
+  const proxy = await proxyFactory.connect(signers[0]).deploy(logic, admin, data);
+  await proxy.deployed();
+  console.log("VaultProxy deployed to: ", proxy.address);
+});
+
+task("deploy:setVault").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const vaultFactory: Vault__factory = <Vault__factory>await ethers.getContractFactory("Vault");
+  const vault = <Vault>await vaultFactory.connect(signers[0]).attach(config.VaultProxy);
+  const tx = await vault.setAdmin(signers[0].address)
+  const receipt = await tx.wait()
+  console.log("Vault setAdmin  = ", receipt.status);
+});
+
+task("deploy:vaultWithdraw").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
+  const config = (deployment as any)[network.name];
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const vaultFactory: Vault__factory = <Vault__factory>await ethers.getContractFactory("Vault");
+  const vault = <Vault>await vaultFactory.connect(signers[0]).attach(config.VaultProxy);
+  const tx = await vault.adminWithdraw(config.RAID, ethers.utils.parseEther('1'), signers[0].address)
+  const receipt = await tx.wait()
+  console.log("Vault admin Withdraw  = ", receipt.status);
 });

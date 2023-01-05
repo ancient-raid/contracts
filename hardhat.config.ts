@@ -123,7 +123,7 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     clear: true,
     flat: true,
-    only: [":Hero", ":HeroMint", ":StakingPhase1", ":Marketplace", ":Warrior"],
+    only: [":Hero", ":HeroMint", ":StakingPhase1", ":Marketplace", ":Warrior", ":Vault"],
     spacing: 2,
     format: "json",
   },

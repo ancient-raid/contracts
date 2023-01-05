@@ -174,6 +174,18 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         traits[tokenId].active = active;
     }
 
+    function setTraits2(
+        uint256 tokenId,
+        uint8 race,
+        uint8 attribute
+    ) external {
+        require(isOperator[_msgSender()], "Not operator");
+        require(race >= 1 && race <= 5, "Invalid race");
+        require(attribute >= 1 && attribute <= 5, "Invalid attribute");
+        traits[tokenId].race = race;
+        traits[tokenId].attribute = attribute;
+    }
+
     function getTraits(uint256 tokenId) public view returns (Trait memory) {
         _requireMinted(tokenId);
         return traits[tokenId];
