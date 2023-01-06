@@ -58,19 +58,19 @@ contract Vault is Ownable {
     address public hero;
     address public warrior;
 
-    mapping (uint256 => Deposit) public tokenDeposits;
-    mapping (uint256 => NFTDeposit) public nftDeposits;
+    mapping(uint256 => Deposit) public tokenDeposits;
+    mapping(uint256 => NFTDeposit) public nftDeposits;
 
-    mapping (bytes32 => bool) public withdrawn;
-    mapping (address => bool) public isSupportedToken;
-    
+    mapping(bytes32 => bool) public withdrawn;
+    mapping(string => bool) public withdrawnForString;
+    mapping(string => bool) public withdrawnForToken;
+    mapping(address => bool) public isSupportedToken;
 
     event DepositToken(address indexed user, uint256 id, address token, uint256 amount, uint256 timestamp);
-    event WithdrawToken(address indexed user, uint256 id, address token, uint256 amount, uint256 timestamp);
+    event WithdrawToken(address indexed user, address token, uint256 amount, uint256 timestamp);
 
     event DepositNFT(address indexed user, address token, uint256[] tokenId, uint256 timestamp);
     event WithdrawNFT(address indexed user, address token, uint256 tokenId, uint256 timestamp);
-
 
     function setAdmin(address admin_) external onlyOwner {
         admin = admin_;
@@ -80,13 +80,11 @@ contract Vault is Ownable {
         isSupportedToken[token] = supported;
     }
 
-
-    modifier onlyAdmin() { 
-        require (msg.sender == admin, "Not admin"); 
-        _; 
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not admin");
+        _;
     }
 
-    
     function deposit(address token, uint256 amount) external {
         require(amount > 0, "Amount is zero");
         tokenDeposits[++currentTokenDepositId] = Deposit({
@@ -95,17 +93,21 @@ contract Vault is Ownable {
             amount: amount,
             timestamp: block.timestamp
         });
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        // IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         emit DepositToken(msg.sender, currentTokenDepositId, token, amount, block.timestamp);
     }
 
-    function getNFTDeposits(uint256 id) public view returns(
-        address user,
-        address token,
-        uint256[] memory tokenIds,
-        uint256 timestamp
-    ) {
+    function getNFTDeposits(uint256 id)
+        public
+        view
+        returns (
+            address user,
+            address token,
+            uint256[] memory tokenIds,
+            uint256 timestamp
+        )
+    {
         user = nftDeposits[id].user;
         token = nftDeposits[id].token;
         tokenIds = nftDeposits[id].tokenIds;
@@ -114,7 +116,7 @@ contract Vault is Ownable {
 
     function withdraw(
         uint256 id,
-        address token, 
+        address token,
         uint256 amount,
         uint256 deadline,
         uint8 v,
@@ -127,14 +129,14 @@ contract Vault is Ownable {
         withdrawn[hash] = true;
         address recovered = ECDSA.recover(hash, v, r, s);
         require(recovered == signer, "Invalid signature");
-        IERC20(token).safeTransfer(msg.sender, amount);
-        emit WithdrawToken(msg.sender, id, token, amount, block.timestamp);
+        // IERC20(token).safeTransfer(msg.sender, amount);
+        emit WithdrawToken(msg.sender, token, amount, block.timestamp);
     }
 
     function depositNFTs(address nft, uint256[] calldata tokenIds) external {
-        for(uint256 i = 0; i < tokenIds.length; i++) {
+        /* for(uint256 i = 0; i < tokenIds.length; i++) {
             IERC721(nft).transferFrom(msg.sender, address(this), tokenIds[i]);
-        }
+        }*/
         nftDeposits[++currentNFTDepositId] = NFTDeposit({
             user: msg.sender,
             token: nft,
@@ -145,7 +147,7 @@ contract Vault is Ownable {
         emit DepositNFT(msg.sender, nft, tokenIds, block.timestamp);
     }
 
-    function withdrawNFT( 
+    function withdrawNFT(
         uint256 id,
         WithdrawParams memory params,
         uint256 deadline,
@@ -154,21 +156,23 @@ contract Vault is Ownable {
         bytes32 s
     ) public {
         require(block.timestamp < deadline, "Expired deadline");
-        bytes32 hash = ECDSA.toEthSignedMessageHash(abi.encodePacked(id, msg.sender, params.token, params.tokenId, deadline));
+        bytes32 hash = ECDSA.toEthSignedMessageHash(
+            abi.encodePacked(id, msg.sender, params.token, params.tokenId, deadline)
+        );
         require(!withdrawn[hash], "Already withdrawn");
         withdrawn[hash] = true;
         address recovered = ECDSA.recover(hash, v, r, s);
         require(recovered == signer, "Invalid signature");
 
-        IERC721(params.token).transferFrom(address(this), msg.sender, params.tokenId);
+        //IERC721(params.token).transferFrom(address(this), msg.sender, params.tokenId);
 
         emit WithdrawNFT(msg.sender, params.token, params.tokenId, block.timestamp);
 
-        if(params.token == hero) {
-            IHero(params.token).setTraits(params.tokenId, params.level, params.life, params.active); 
+        if (params.token == hero) {
+            IHero(params.token).setTraits(params.tokenId, params.level, params.life, params.active);
         }
-        if(params.token == warrior) {
-            IWarrior(params.token).setTraits(params.tokenId, params.life, params.active); 
+        if (params.token == warrior) {
+            IWarrior(params.token).setTraits(params.tokenId, params.life, params.active);
         }
     }
 
@@ -180,21 +184,192 @@ contract Vault is Ownable {
         bytes32[] calldata rs,
         bytes32[] calldata ss
     ) external {
-        for(uint256 i = 0; i < paramsArray.length; i++) {
+        for (uint256 i = 0; i < paramsArray.length; i++) {
             withdrawNFT(id, paramsArray[i], deadline, vs[i], rs[i], ss[i]);
         }
     }
 
+    /*single*/
+
+    address verifyAddress = 0xD41C1D568DC7E8a312E5fA24f700f5775ef88019;
+
+    function withdrawNFTSingle(
+        address owner,
+        string memory id,
+        address token,
+        uint256 tokenId,
+        uint8 level,
+        uint16 life,
+        bool active,
+        string memory s,
+        bytes memory signature
+    ) public {
+        require(!withdrawnForString[id], "Already withdrawn");
+        withdrawnForString[id] = true;
+        address recovered = checkRecover(msg.sender, id, token, tokenId, level, life, active, s, signature);
+        require(recovered == verifyAddress, "Invalid signature");
+
+        // IERC721(token).transferFrom(address(this), msg.sender,tokenId);
+
+        emit WithdrawNFT(msg.sender, token, tokenId, block.timestamp);
+
+        if (token == hero) {
+            IHero(token).setTraits(tokenId, level, life, active);
+        }
+        if (token == warrior) {
+            IWarrior(token).setTraits(tokenId, life, active);
+        }
+    }
+
+    function withdrawNFTSMultiple(
+        address owner,
+        string[] memory ids,
+        address[] tokens,
+        uint256[] tokenIds,
+        uint8[] levels,
+        uint16[] lifes,
+        bool[] actives,
+        string[] memory s,
+        bytes[] memory signatures
+    ) public {
+        for (uint256 i = 0; i < ids; i++) {
+            withdrawNFTSingle(
+                owner,
+                ids[i],
+                tokens[i],
+                tokenIds[i],
+                levels[i],
+                lifes[i],
+                actives[i],
+                s[i],
+                signatures[i]
+            );
+        }
+    }
+
+    function withdrawSigle(
+        string memory id,
+        address token,
+        uint256 amount,
+        string memory s,
+        bytes memory signature
+    ) external {
+        require(!withdrawnForToken[id], "Already withdrawn");
+        withdrawnForToken[id] = true;
+        address recovered = checkRecoverToken(msg.sender, id, token, amount, s, signature);
+        require(recovered == signer, "Invalid signature");
+        // IERC20(token).safeTransfer(msg.sender, amount);
+        emit WithdrawToken(msg.sender, token, amount, block.timestamp);
+    }
+
+    /**
+     *验证签名
+     */
+    function checkRecover(
+        address owner,
+        string memory id,
+        address token,
+        uint256 tokenId,
+        uint8 level,
+        uint16 life,
+        bool active,
+        string memory s,
+        bytes memory signature
+    ) public view returns (address) {
+        bytes32 hash = toEthSignedMessageHash(owner, id, token, tokenId, level, life, active, s);
+        (address voter, ECDSA.RecoverError error) = ECDSA.tryRecover(hash, signature);
+        _throwError(error);
+
+        require(verifyAddress == voter, "Validation failed");
+        return voter;
+    }
+
+    /**
+     *验证签名  token
+     */
+    function checkRecoverToken(
+        address owner,
+        string memory id,
+        address token,
+        uint256 amount,
+        string memory s,
+        bytes memory signature
+    ) public view returns (address) {
+        bytes32 hash = toEthSignedMessageHashToken(owner, id, token, amount, s);
+        (address voter, ECDSA.RecoverError error) = ECDSA.tryRecover(hash, signature);
+        _throwError(error);
+
+        require(verifyAddress == voter, "Validation failed");
+        return voter;
+    }
+
+    /**
+     * 签名数据
+     */
+    function toEthSignedMessageHash(
+        address owner,
+        string memory id,
+        address token,
+        uint256 tokenId,
+        uint8 level,
+        uint16 life,
+        bool active,
+        string memory s
+    ) public pure returns (bytes32) {
+        bytes32 hash = keccak256(abi.encodePacked(owner, id, token, tokenId, level, life, active, s));
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n", hash));
+    }
+
+    /**
+     * 签名数据
+     */
+    function toEthSignedMessageHashToken(
+        address owner,
+        string memory id,
+        address token,
+        uint256 amount,
+        string memory s
+    ) public pure returns (bytes32) {
+        bytes32 hash = keccak256(abi.encodePacked(owner, id, token, amount, s));
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n", hash));
+    }
+
+    /**
+     *异常
+     */
+    function _throwError(ECDSA.RecoverError error) private pure {
+        if (error == ECDSA.RecoverError.NoError) {
+            return; // no error: do nothing
+        } else if (error == ECDSA.RecoverError.InvalidSignature) {
+            revert("ECDSA: invalid signature");
+        } else if (error == ECDSA.RecoverError.InvalidSignatureLength) {
+            revert("ECDSA: invalid signature length");
+        } else if (error == ECDSA.RecoverError.InvalidSignatureS) {
+            revert("ECDSA: invalid signature 's' value");
+        } else if (error == ECDSA.RecoverError.InvalidSignatureV) {
+            revert("ECDSA: invalid signature 'v' value");
+        }
+    }
+
+    /*single end*/
     /* 
         admin functions 
     */
 
-    function adminWithdraw(address token, uint256 amount, address to) external onlyAdmin {
+    function adminWithdraw(
+        address token,
+        uint256 amount,
+        address to
+    ) external onlyAdmin {
         IERC20(token).safeTransfer(to, amount);
     }
 
-    function adminWithdrawNFTs(address token, uint256[] calldata tokenIds, address to) external onlyAdmin {
-        for(uint256 i = 0; i < tokenIds.length; i++) {
+    function adminWithdrawNFTs(
+        address token,
+        uint256[] calldata tokenIds,
+        address to
+    ) external onlyAdmin {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             IERC721(token).transferFrom(address(this), to, tokenIds[i]);
         }
     }
