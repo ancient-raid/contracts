@@ -16,6 +16,11 @@ interface IHero {
         uint16 life,
         bool active
     ) external;
+    function setTraits2(
+        uint256 tokenId,
+        uint8 race,
+        uint8 attribute
+    ) external;
 }
 
 interface IWarrior {
@@ -181,6 +186,7 @@ contract Vault is OwnableUpgradeable {
 
         if(params.token == hero) {
             IHero(params.token).setTraits(params.tokenId, params.level, params.life, params.active); 
+            IHero(params.token).setTraits2(params.tokenId, params.level, params.life, params.active); 
         }
         if(params.token == warrior) {
             IWarrior(params.token).setTraits(params.tokenId, params.life, params.active); 

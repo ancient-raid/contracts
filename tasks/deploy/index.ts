@@ -425,8 +425,9 @@ task("deploy:UpgradeHero").setAction(async function (taskArguments: TaskArgument
 
   const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
   const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  const data = ethers.utils.id("reinitialize()").slice(0, 10);
-  const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV2, data);
+  // const data = ethers.utils.id("reinitialize()").slice(0, 10);
+  // const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV2, data);
+  const tx = await proxyAdmin.upgrade(config.HeroProxy, config.HeroV3);
   const receipt = await tx.wait();
   console.log("upgrade Hero =  ", receipt.status);
 });
