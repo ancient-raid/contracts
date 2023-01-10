@@ -87,6 +87,9 @@ contract Vault is OwnableUpgradeable {
         isSupportedToken[address(0xeb90A6273F616A8ED1cf58A05d3ae1C1129b4DE6)] = true; // RAID
         isSupportedToken[address(0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8)] = true; // Hero NFT
         isSupportedToken[address(0x0d9eb3079Dbf1Df9715B47DA98a3BacaeD28c49C)] = true; // Warrior NFT
+         verifyAddress = 0xB91f5E2fEE8849f955aA6c1eeF09338385759888;
+         hero = 0x38Fd96AFe66CD14a81787077fb90e93944Dd75f8;
+         warrior = 0x0d9eb3079Dbf1Df9715B47DA98a3BacaeD28c49C;
     }
 
     function setAdmin(address admin_) external onlyOwner {
@@ -115,7 +118,7 @@ contract Vault is OwnableUpgradeable {
             amount: amount,
             timestamp: block.timestamp
         });
-        // IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+          IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         emit DepositToken(msg.sender, currentTokenDepositId, token, amount, block.timestamp);
     }
@@ -151,7 +154,7 @@ contract Vault is OwnableUpgradeable {
         withdrawn[hash] = true;
         address recovered = ECDSA.recover(hash, v, r, s);
         require(recovered == signer, "Invalid signature");
-        // IERC20(token).safeTransfer(msg.sender, amount);
+          IERC20(token).safeTransfer(msg.sender, amount);
         emit WithdrawToken(msg.sender, token, amount, block.timestamp);
     }
 
@@ -169,55 +172,13 @@ contract Vault is OwnableUpgradeable {
         emit DepositNFT(msg.sender, token, tokenIds, block.timestamp);
     }
 
-    // function withdrawNFT(
-    //     uint256 id,
-    //     WithdrawParams memory params,
-    //     uint256 deadline,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public onlySupportedToken(params.token) {
-    //     require(block.timestamp < deadline, "Expired deadline");
-    //     bytes32 hash = ECDSA.toEthSignedMessageHash(
-    //         abi.encodePacked(id, msg.sender, params.token, params.tokenId, deadline)
-    //     );
-    //     require(!withdrawn[hash], "Already withdrawn");
-    //     withdrawn[hash] = true;
-    //     address recovered = ECDSA.recover(hash, v, r, s);
-    //     require(recovered == signer, "Invalid signature");
-
-    //     //IERC721(params.token).transferFrom(address(this), msg.sender, params.tokenId);
-
-    //     emit WithdrawNFT(msg.sender, params.token, params.tokenId, block.timestamp);
-
-    //     if(params.token == hero) {
-    //         IHero(params.token).setTraits(params.tokenId, params.level, params.life, params.active); 
-    //         IHero(params.token).setTraits2(params.tokenId, params.level, params.life, params.active); 
-    //     }
-    //     if (params.token == warrior) {
-    //         IWarrior(params.token).setTraits(params.tokenId, params.life, params.active);
-    //     }
-    // }
-
-    // function withdrawNFTs(
-    //     uint256 id,
-    //     WithdrawParams[] calldata paramsArray,
-    //     uint256 deadline,
-    //     uint8[] calldata vs,
-    //     bytes32[] calldata rs,
-    //     bytes32[] calldata ss
-    // ) external {
-    //     for (uint256 i = 0; i < paramsArray.length; i++) {
-    //         withdrawNFT(id, paramsArray[i], deadline, vs[i], rs[i], ss[i]);
-    //     }
-    // }
+    
 
     /*single*/
 
-    address verifyAddress = 0xD41C1D568DC7E8a312E5fA24f700f5775ef88019;
+    address verifyAddress ;
 
-    function withdrawNFTSingle(
-        address owner,
+    function withdrawNFTSingle( 
         string memory id,
         address token,
         uint256 tokenId,
@@ -234,7 +195,7 @@ contract Vault is OwnableUpgradeable {
         address recovered = checkRecover(msg.sender, id, token, tokenId, level, life, active, s, signature);
         require(recovered == verifyAddress, "Invalid signature");
 
-        // IERC721(token).transferFrom(address(this), msg.sender,tokenId);
+         IERC721(token).transferFrom(address(this), msg.sender,tokenId);
 
         emit WithdrawNFT(msg.sender, token, tokenId, block.timestamp);
 
@@ -249,7 +210,7 @@ contract Vault is OwnableUpgradeable {
     }
 
     function withdrawNFTSMultiple(
-        address owner,
+      
         string[] memory ids,
         address[] memory tokens,
         uint256[] memory tokenIds,
@@ -263,7 +224,7 @@ contract Vault is OwnableUpgradeable {
     ) public {
         for (uint256 i = 0; i < ids.length; i++) {
             withdrawNFTSingle(
-                owner,
+               
                 ids[i],
                 tokens[i],
                 tokenIds[i],
@@ -288,8 +249,8 @@ contract Vault is OwnableUpgradeable {
         require(!withdrawnForToken[id], "Already withdrawn");
         withdrawnForToken[id] = true;
         address recovered = checkRecoverToken(msg.sender, id, token, amount, s, signature);
-        require(recovered == signer, "Invalid signature");
-        // IERC20(token).safeTransfer(msg.sender, amount);
+        require(recovered == verifyAddress, "Invalid signature");
+        IERC20(token).safeTransfer(msg.sender, amount);
         emit WithdrawToken(msg.sender, token, amount, block.timestamp);
     }
 
