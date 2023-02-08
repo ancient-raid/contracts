@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./IBlacklist.sol";
+import "./IRandom.sol";
 
 contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     enum SpendCoin {
@@ -32,6 +33,7 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     mapping(address => bool) public isAdmin;
     mapping(uint256 => bool) public isBlocked;
     
+    address public _random;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -43,6 +45,14 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         isAdmin[address(0xCAB72Bf00ab85A1a2C2069CFb679e09b59d386Cb)] = true;
         isAdmin[address(0x7a38060d663d14f7441e6Cb1F1b4c1c0a113E68E)] = true;
         isAdmin[address(0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359)] = true;
+    }
+
+    function reinitialize3() public reinitializer(3) {
+        _random = address(0x8951405238b1597cD824Ae50EB5077fc6c407b26);
+    }
+
+    function setRandom(address random_) external onlyOwner {
+        _random = random_;
     }
 
     function setAdmin(address admin_, bool b_) external onlyOwner {
@@ -158,11 +168,7 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         return race;
     }
 
-    // 人50%
-    // 妖25%
-    // 獸17%
-    // 龍7%
-    // 神1%
+
     // （木35%>水25%>火20%>暗12%>光8%）
     function _generateAttribute(uint256 seed) internal pure returns (uint8) {
         uint8 attribute;
@@ -230,7 +236,8 @@ contract Warrior is ERC721EnumerableUpgradeable, OwnableUpgradeable {
 
 
     function random(uint256 seed) internal returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, nonce++, seed)));
+        // return uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, nonce++, seed)));
+        return IRandom(_random).random(seed, ++nonce);
     }
 
     function _setApprovalForAll(

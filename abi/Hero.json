@@ -107,6 +107,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "_random",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -440,6 +453,13 @@
   },
   {
     "inputs": [],
+    "name": "reinitialize3",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -608,6 +628,19 @@
       }
     ],
     "name": "setOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "random_",
+        "type": "address"
+      }
+    ],
+    "name": "setRandom",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

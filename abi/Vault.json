@@ -750,11 +750,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
         "internalType": "string[]",
         "name": "ids",
         "type": "string[]"
@@ -812,11 +807,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
       {
         "internalType": "string",
         "name": "id",

@@ -24,7 +24,9 @@ import type {
   BlackCard,
   BlackCard__factory,
   Vault,
-  Vault__factory
+  Vault__factory,
+  Random,
+  Random__factory
 } from "../../src/types";
 import deployment from "../deployment.json";
 
@@ -111,12 +113,18 @@ task("deploy:HeroSetup").setAction(async function (taskArguments: TaskArguments,
   const heroFactory = <Hero__factory>await ethers.getContractFactory("Hero");
   const hero = await heroFactory.connect(signers[0]).attach(config.HeroProxy);
 
-  // const tx = await hero.setMinter(config.HeroMintV3, true);
+
+  console.log(await hero._random())
+
+  // console.log(await hero.getTraits(1175))
+
+  // const tx = await hero.setMinter("0x95B213Cf3A859dfC03a6CabD05e4992c29AFA0a7", true);
   // const receipt = await tx.wait();
   // console.log("setMinter = ", receipt.status);
 
-  const isAdmin = await hero.isAdmin('0xb5806BaC44B345A8505A90e1cEA9266a6A329129')
-  console.log(isAdmin);
+  // const tx = await hero.setOperator('0x6c1bb29b967e174fa8e872bf4b4470770c0818b7', true)
+  // const receipt = await tx.wait();
+  // console.log("setOperator = ", receipt.status);
 
   // await hero.setBlacklist(config.Blacklist)
   // console.log("setBlacklist completed")
@@ -130,7 +138,7 @@ task("deploy:setBlacklist").setAction(async function (taskArguments: TaskArgumen
   const blacklistFactory = <Blacklist__factory>await ethers.getContractFactory("Blacklist");
   const blacklist = await blacklistFactory.connect(signers[0]).attach(config.Blacklist);
 
-  const tx = await blacklist.add([config.Opensea]);
+  const tx = await blacklist.add([config.ElementNFT]);
   const receipt = await tx.wait();
   console.log("Blacklist added = ", receipt.status);
 });
@@ -231,23 +239,26 @@ task("deploy:SetMarketplace").setAction(async function (taskArguments: TaskArgum
   const marketplaceFactory = <Marketplace__factory>await ethers.getContractFactory("Marketplace");
   const marketplace = await marketplaceFactory.connect(signers[0]).attach(config.ProxyMarketplace);
 
-  let tx = await marketplace.addNFT(config.WarriorProxy)
+  let tx = await marketplace.setCooldown(24 * 60 * 60)
   let receipt = await tx.wait()
-  console.log("addNFT = ", receipt.status)
+  console.log("setCooldown = ", receipt.status)
 });
 
 task("deploy:setConfig").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
   const signers: SignerWithAddress[] = await ethers.getSigners();
   let heroMintFactory = <HeroMint__factory>await ethers.getContractFactory("HeroMint");
   const config = (deployment as any)[network.name];
-  console.log("config=", config.HeroMint);
-  const heroMint = await heroMintFactory.connect(signers[0]).attach(config.HeroMint);
+  // console.log("config=", config.HeroMint);
+  const heroMint = await heroMintFactory.connect(signers[0]).attach(config.HeroMintV3);
   // await heroMint.setBusdPrice(ethers.utils.parseEther('75'))
   // await heroMint.setRaidPrice(ethers.utils.parseEther('100'))
   // await heroMint.setGoldPrice(ethers.utils.parseEther('200'))
   // await heroMint.setRecipient(signers[1].address)
-  // await heroMint.setInvitation("0xBAED839291A28CbB02C31aE268a8797D02a4c0de");
+  // await heroMint.setInvitation("0x6bAEf88ea37eEDE9f6407A4dE2BF81f3D4035A3A");
   // console.log("finished");
+
+  const invitation = await heroMint.owner()
+  console.log("invitation = ", invitation)
 });
 
 task("init").setAction(async function (taskArguments: TaskArguments, { ethers, network }) {
@@ -334,23 +345,32 @@ task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArgumen
   const warriorFactory = <Warrior__factory>await ethers.getContractFactory("Warrior");
   const warrior = await warriorFactory.connect(signers[0]).attach(config.WarriorProxy);
 
-  // console.log(await warrior.getTraits(73))
+  // console.log("2406 = ", await warrior.getTraits(2406))
+  // console.log("4236 = ", await warrior.getTraits(4236))
+  // console.log("4237 = ", await warrior.getTraits(4237))
+  // console.log("4238 = ", await warrior.getTraits(4238))
+  // console.log("4239 = ", await warrior.getTraits(4239))
+
+  // console.log(warrior.interface.encodeFunctionData("getTraits",[4238]))
+
+  // warrior.callStatic
+
   // console.log(await warrior.getTraits(79))
 
   // const isAdmin = await warrior.isAdmin("0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359")
   // console.log("isAdmin = ", isAdmin)
 
 
-  // const tx = await warrior.setAdmin(signers[0].address, true);
+  // const tx = await warrior.setOperator('0x6c1bb29b967e174fa8e872bf4b4470770c0818b7', true);
   // const receipt = await tx.wait();
-  // console.log("warrior setAdmin = ", receipt.status)
+  // console.log("warrior setOperator = ", receipt.status)
 
 
-  const blacklistedIds = [3764, 3851, 3852]
+  // const blacklistedIds = [3764, 3851, 3852]
 
-  console.log("3764 isBlocked = ", await warrior.isBlocked(3764))
-  console.log("3851 isBlocked = ", await warrior.isBlocked(3851))
-  console.log("3852 isBlocked = ", await warrior.isBlocked(3852))
+  // console.log("3764 isBlocked = ", await warrior.isBlocked(3764))
+  // console.log("3851 isBlocked = ", await warrior.isBlocked(3851))
+  // console.log("3852 isBlocked = ", await warrior.isBlocked(3852))
   // {
   //   const tx = await warrior.setBlocked(3764, true);
   //   const receipt = await tx.wait();
@@ -370,11 +390,11 @@ task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArgumen
   // }
   
 
-  // // const isMinter = await warrior.isMinter(config.WarriorMint)
-  // // console.log("isMinter = ", isMinter)
-  // const tx = await warrior.setMinter(config.WarriorMint, true);
-  // const receipt = await tx.wait();
-  // console.log("warrior setMinter = ", receipt.status)
+  // const isMinter = await warrior.isMinter(config.WarriorMint)
+  // console.log("isMinter = ", isMinter)
+  const tx = await warrior.setMinter("0x95B213Cf3A859dfC03a6CabD05e4992c29AFA0a7", true);
+  const receipt = await tx.wait();
+  console.log("warrior setMinter = ", receipt.status)
 
   // {
   //   const tx = await warrior.setBaseURI("https://metadata.ancientraid.com/warrior/metadata/")
@@ -425,9 +445,9 @@ task("deploy:UpgradeHero").setAction(async function (taskArguments: TaskArgument
 
   const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
   const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  // const data = ethers.utils.id("reinitialize()").slice(0, 10);
-  // const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV2, data);
-  const tx = await proxyAdmin.upgrade(config.HeroProxy, config.HeroV3);
+  const data = ethers.utils.id("reinitialize3()").slice(0, 10);
+  const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV4, data);
+  // const tx = await proxyAdmin.upgrade(config.HeroProxy, config.HeroV3);
   const receipt = await tx.wait();
   console.log("upgrade Hero =  ", receipt.status);
 });
@@ -440,8 +460,8 @@ task("deploy:UpgradeWarrior").setAction(async function (taskArguments: TaskArgum
   
   const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
   const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  const data = ethers.utils.id("reinitialize()").slice(0, 10);
-  const tx = await proxyAdmin.upgradeAndCall(config.WarriorProxy, config.WarriorV2, data);
+  const data = ethers.utils.id("reinitialize3()").slice(0, 10);
+  const tx = await proxyAdmin.upgradeAndCall(config.WarriorProxy, config.WarriorV3, data);
   const receipt = await tx.wait();
   console.log("upgrade Warrior =  ", receipt.status);
 });
@@ -498,4 +518,26 @@ task("deploy:vaultWithdraw").setAction(async function (taskArguments: TaskArgume
   const tx = await vault.adminWithdraw(config.RAID, ethers.utils.parseEther('1'), signers[0].address)
   const receipt = await tx.wait()
   console.log("Vault admin Withdraw  = ", receipt.status);
+});
+
+
+task("deploy:Random").setAction(async function (taskArguments: TaskArguments, { ethers }) {
+  const signers: SignerWithAddress[] = await ethers.getSigners();
+  const randomFactory = await ethers.getContractFactory("Random");
+  const random = await randomFactory.connect(signers[0]).deploy();
+  await random.deployed();
+  console.log("Random deployed to: ", random.address);
+});
+
+task("deploy:decode").setAction(async function (taskArguments: TaskArguments, { ethers }) {
+  // const signers: SignerWithAddress[] = await ethers.getSigners();
+  // const randomFactory = await ethers.getContractFactory("Random");
+  // const random = await randomFactory.connect(signers[0]).deploy();
+  // await random.deployed();
+  // console.log("Random deployed to: ", random.address);
+
+  const iface = new ethers.utils.Interface(["withdraw(uint256,address,uint256,uint256,uint8,bytes32,bytes32)"]);
+  const data = iface.decodeFunctionData("withdraw", "0da25b4800000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000e9e7cea3dedca5984780bafc599bd69add087d5600000000000000000000000000000000000000000000000270801d946c94000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000f33343132373339323037343038393400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004425553440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000412dd9b39b6dab5723f63b15e7ba2c47f43b0cdd3f3e24f73c2ad252c063260c7a26beecedb900aac0b38e8b40bfd1979984eaf5c98b2ca865a647d891dd5e56ea1b00000000000000000000000000000000000000000000000000000000000000");
+
+  console.log("data=", data)
 });

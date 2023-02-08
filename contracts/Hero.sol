@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Enumer
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./IBlacklist.sol";
+import "./IRandom.sol";
 
 contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     struct Trait {
@@ -25,6 +26,8 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     mapping(uint256 => uint256) public mintedAt;
     mapping(address => bool) public isAdmin;
     mapping(uint256 => bool) public isBlocked;
+
+    address public _random;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -50,8 +53,16 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         isAdmin[address(0xbcDF8496b79D6b3C001dDC63E2880d7afF1AB359)] = true;
     }
 
+    function reinitialize3() public reinitializer(3) {
+        _random = address(0x8951405238b1597cD824Ae50EB5077fc6c407b26);
+    }
+
     function setAdmin(address admin_, bool b_) external onlyOwner {
         isAdmin[admin_] = b_;
+    }
+
+    function setRandom(address random_) external onlyOwner {
+        _random = random_;
     }
 
     function setBlocked(uint256 tokenId, bool b_) external {
@@ -192,7 +203,8 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
     }
 
     function random(uint256 seed) internal returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, nonce++, seed)));
+        // return uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, nonce++, seed)));
+        return IRandom(_random).random(seed, ++nonce);
     }
 
     function _setApprovalForAll(
