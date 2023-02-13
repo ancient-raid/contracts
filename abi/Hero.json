@@ -375,6 +375,19 @@
         "type": "address"
       }
     ],
+    "name": "mint3",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
     "name": "mintByGold",
     "outputs": [],
     "stateMutability": "nonpayable",

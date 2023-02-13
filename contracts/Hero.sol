@@ -173,6 +173,41 @@ contract Hero is ERC721EnumerableUpgradeable, OwnableUpgradeable {
         mintedAt[tokenId] = block.timestamp;
     }
 
+    // Human - 75%
+    // Elf - 23%
+    // Orc - 1%
+    // Dragon - 1%
+    // No God
+    function mint3(address to) external {
+        require(isMinter[_msgSender()], "Not minter");
+        uint256 tokenId = totalSupply() + 1;
+        _mint(to, tokenId);
+
+        uint256 rand = random(tokenId);
+        uint256 seed = (rand >> 240) % 100;
+        
+        uint8 race = 1;
+        if (seed < 75) {
+            race = 1;
+        } else if (seed >= 75 && seed < 98) {
+            race = 2;
+        } else if (seed >= 98 && seed < 99) {
+            race = 3;
+        } else if (seed >= 99) {
+            race = 4;
+        }
+
+        traits[tokenId] = Trait({
+            race: race,
+            attribute: _generateAttribute((rand & 0xffff) % 100),
+            level: 1,
+            life: 300,
+            active: false
+        });
+
+        mintedAt[tokenId] = block.timestamp;
+    }
+
     function setTraits(
         uint256 tokenId,
         uint8 level,

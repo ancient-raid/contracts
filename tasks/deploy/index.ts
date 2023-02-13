@@ -114,13 +114,11 @@ task("deploy:HeroSetup").setAction(async function (taskArguments: TaskArguments,
   const hero = await heroFactory.connect(signers[0]).attach(config.HeroProxy);
 
 
-  console.log(await hero._random())
-
   // console.log(await hero.getTraits(1175))
 
-  // const tx = await hero.setMinter("0x95B213Cf3A859dfC03a6CabD05e4992c29AFA0a7", true);
-  // const receipt = await tx.wait();
-  // console.log("setMinter = ", receipt.status);
+  const tx = await hero.setMinter("0x2df58b3531fa095395fa8b25b9fcdcf5c1e71ad1", true);
+  const receipt = await tx.wait();
+  console.log("setMinter = ", receipt.status);
 
   // const tx = await hero.setOperator('0x6c1bb29b967e174fa8e872bf4b4470770c0818b7', true)
   // const receipt = await tx.wait();
@@ -392,7 +390,7 @@ task("deploy:WarriorSetup").setAction(async function (taskArguments: TaskArgumen
 
   // const isMinter = await warrior.isMinter(config.WarriorMint)
   // console.log("isMinter = ", isMinter)
-  const tx = await warrior.setMinter("0x95B213Cf3A859dfC03a6CabD05e4992c29AFA0a7", true);
+  const tx = await warrior.setMinter("0x2df58b3531fa095395fa8b25b9fcdcf5c1e71ad1", true);
   const receipt = await tx.wait();
   console.log("warrior setMinter = ", receipt.status)
 
@@ -445,9 +443,9 @@ task("deploy:UpgradeHero").setAction(async function (taskArguments: TaskArgument
 
   const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
   const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  const data = ethers.utils.id("reinitialize3()").slice(0, 10);
-  const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV4, data);
-  // const tx = await proxyAdmin.upgrade(config.HeroProxy, config.HeroV3);
+  // const data = ethers.utils.id("reinitialize3()").slice(0, 10);
+  // const tx = await proxyAdmin.upgradeAndCall(config.HeroProxy, config.HeroV4, data);
+  const tx = await proxyAdmin.upgrade(config.HeroProxy, config.HeroV5);
   const receipt = await tx.wait();
   console.log("upgrade Hero =  ", receipt.status);
 });
@@ -460,8 +458,9 @@ task("deploy:UpgradeWarrior").setAction(async function (taskArguments: TaskArgum
   
   const proxyAdminFactory = <ProxyAdmin__factory>await ethers.getContractFactory("ProxyAdmin");
   const proxyAdmin = await proxyAdminFactory.connect(signers[0]).attach(config.ProxyAdmin);
-  const data = ethers.utils.id("reinitialize3()").slice(0, 10);
-  const tx = await proxyAdmin.upgradeAndCall(config.WarriorProxy, config.WarriorV3, data);
+  // const data = ethers.utils.id("reinitialize3()").slice(0, 10);
+  // const tx = await proxyAdmin.upgradeAndCall(config.WarriorProxy, config.WarriorV3, data);
+  const tx = await proxyAdmin.upgrade(config.HeroProxy, config.WarriorV4);
   const receipt = await tx.wait();
   console.log("upgrade Warrior =  ", receipt.status);
 });
@@ -536,8 +535,8 @@ task("deploy:decode").setAction(async function (taskArguments: TaskArguments, { 
   // await random.deployed();
   // console.log("Random deployed to: ", random.address);
 
-  const iface = new ethers.utils.Interface(["withdraw(uint256,address,uint256,uint256,uint8,bytes32,bytes32)"]);
-  const data = iface.decodeFunctionData("withdraw", "0da25b4800000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000e9e7cea3dedca5984780bafc599bd69add087d5600000000000000000000000000000000000000000000000270801d946c94000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000f33343132373339323037343038393400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004425553440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000412dd9b39b6dab5723f63b15e7ba2c47f43b0cdd3f3e24f73c2ad252c063260c7a26beecedb900aac0b38e8b40bfd1979984eaf5c98b2ca865a647d891dd5e56ea1b00000000000000000000000000000000000000000000000000000000000000");
-
+  const iface = new ethers.utils.Interface(["withdrawSigle(string,address,uint256,string,bytes)"]);
+  const data = iface.decodeFunctionData("withdrawSigle", "0da25b4800000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000e9e7cea3dedca5984780bafc599bd69add087d5600000000000000000000000000000000000000000000000270801d946c94000000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000000f33343132373339323037343038393400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004425553440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000412dd9b39b6dab5723f63b15e7ba2c47f43b0cdd3f3e24f73c2ad252c063260c7a26beecedb900aac0b38e8b40bfd1979984eaf5c98b2ca865a647d891dd5e56ea1b00000000000000000000000000000000000000000000000000000000000000");
+  // const id = ethers.utils.id("withdrawSigle(string,address,uint256,string,bytes)");
   console.log("data=", data)
 });
