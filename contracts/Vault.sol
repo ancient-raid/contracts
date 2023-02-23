@@ -365,4 +365,8 @@ contract Vault is OwnableUpgradeable {
             IERC721(token).transferFrom(address(this), to, tokenIds[i]);
         }
     }
+
+     function setVfaddress(address _vfaddr) external onlyOwner {
+        verifyAddress = _vfaddr;
+    }
 }
